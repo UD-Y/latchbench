@@ -13,3 +13,5 @@ checkpoints/
 *.npz
 *.hdf5
 logs/
+results/gui/
+results/contact_tuning/smoke/

@@ -9,6 +9,7 @@ Spawns two SO-101s (isaaclab_so101) side by side: one with all six joints on so1
 
     cd ~/work/IsaacLab-Arena && source .venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
     python ~/work/patchbench/scripts/hold_test.py [--friction_mode explicit|physx_joint] [--out DIR]
+    python ~/work/patchbench/scripts/hold_test.py --viz kit --slowmo 1 --hold_open   # watch it (laptop: nothing else running)
 
 Writes PNGs and summary.json to patchbench/results/hold_test/.
 """
@@ -20,10 +21,13 @@ from isaaclab.app import AppLauncher
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--friction_mode", default="explicit", choices=["explicit", "physx_joint"])
-parser.add_argument("--out", default=str(Path(__file__).resolve().parents[1] / "results/hold_test"))
+parser.add_argument("--out", default=None, help="default results/hold_test (results/gui/hold_test with --viz kit)")
+parser.add_argument("--slowmo", type=float, default=0.0, help="GUI: play N x slower than real time (0 = as fast as possible)")
+parser.add_argument("--hold_open", action="store_true", help="GUI: keep the window open after the test")
+parser.add_argument("--render_every", type=int, default=4, help="GUI: render every N physics steps (4 = 60 fps sim time)")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
-args.headless = True
+GUI = "kit" in str(args.visualizer or "")  # headless unless --viz kit
 simulation_app = AppLauncher(args).app
 
 import json  # noqa: E402
@@ -44,7 +48,8 @@ from so101_contact.isaaclab.actuator import SO101_SIM_TO_LEROBOT, STS3215Actuato
 DT = 1 / 240  # physics; telemetry and commands at 30 Hz (decimation 8)
 DECIMATION = 8
 SIM_JOINTS = list(SO101_SIM_TO_LEROBOT)
-OUT = Path(args.out)
+ROOT = Path(__file__).resolve().parents[1] / "results"
+OUT = Path(args.out) if args.out else ROOT / ("gui/hold_test" if GUI else "hold_test")
 OUT.mkdir(parents=True, exist_ok=True)
 
 
@@ -78,6 +83,9 @@ def main():
     )
     contact = ContactSensor(ContactSensorCfg(prim_path="/World/ball", filter_prim_paths_expr=["/World/servo/gripper", "/World/servo/jaw"]))
     sim.reset()
+    if GUI:
+        sim.set_camera_view([0.75, 0.5, 0.45], [0.0, 0.5, 0.12])  # both arms: STS3215 at y=0, implicit PD at y=1
+    pace = Pacer(args.slowmo if GUI else 0.0)
     groups = STS3215Actuator.bind_all(servo)
     print("[hold_test] STS3215 groups:", {g.cfg.joint_names_expr[0]: g.joint_names for g in groups})
     jid = [servo.joint_names.index(n) for n in SIM_JOINTS]
@@ -106,12 +114,16 @@ def main():
         quat = t(servo.data.body_link_quat_w)[0, gripper_body]
         return pos + quat_apply(quat.unsqueeze(0), torch.tensor([TCP_OFFSET], device=sim.device))[0]
 
+    frame = [0]
+
     def step(goal, goal_b=None):
         servo.actuators.target_command.set_position_index(value=goal, joint_ids=jid)
         baseline.actuators.target_command.set_position_index(value=goal if goal_b is None else goal_b, joint_ids=jid_b)
         for art in (servo, baseline):
             art.write_data_to_sim()
-        sim.step(render=False)
+        frame[0] += 1
+        sim.step(render=GUI and frame[0] % args.render_every == 0)
+        pace.tick(DT)
         for art in (servo, baseline):
             art.update(DT)
         ball.update(DT)
@@ -230,6 +242,25 @@ def main():
     (OUT / "summary.json").write_text(json.dumps(summary, indent=1))
     plots(np.array(log_a), lb, lc, goal[0, pitch].item())
     print(f"[hold_test] wrote {OUT}")
+    if GUI and args.hold_open:
+        print("[hold_test] done; close the window to exit")
+        while simulation_app.is_running():
+            sim.render()
+
+
+class Pacer:
+    """Sleeps so that wall time >= ``slowmo`` x simulated time (0 disables)."""
+
+    def __init__(self, slowmo: float):
+        self.slowmo, self.sim_t, self.t0 = slowmo, 0.0, time.perf_counter()
+
+    def tick(self, dt: float) -> None:
+        if self.slowmo <= 0:
+            return
+        self.sim_t += dt
+        lag = self.slowmo * self.sim_t - (time.perf_counter() - self.t0)
+        if lag > 0:
+            time.sleep(lag)
 
 
 def plots(la, lb, lc, goal):

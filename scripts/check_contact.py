@@ -13,6 +13,10 @@ gpu_max_num_partitions=1, bounce 0.2, friction offset 0.01, correlation 0.00625,
 
     python scripts/check_contact.py --dt 0.0020833 --pos_iters 32 --contact_offset 0.0005 --run_id c_480_32_05
 Writes results/contact_tuning/<run_id>/{summary.json, traces.csv.gz, force_vs_depth.png, jam_map.png}.
+
+Watch one aligned insertion (1 env, laptop: nothing else Isaac-related running):
+    python scripts/check_contact.py --viz kit --tiers medium --offsets_mm 0 --tilts_deg 0 --seeds 1 \
+        --pos_iters 32 --cutaway --slowmo 10 --hold_open
 """
 
 import argparse
@@ -32,10 +36,13 @@ parser.add_argument("--tilts_deg", default="0,1,2")
 parser.add_argument("--seeds", type=int, default=5)
 parser.add_argument("--friction", type=float, default=0.35, help="static = dynamic friction, plastic on plastic")
 parser.add_argument("--run_id", default=None)
-parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[1] / "results" / "contact_tuning")
+parser.add_argument("--out", type=Path, default=None, help="default results/contact_tuning (results/gui with --viz kit)")
+parser.add_argument("--slowmo", type=float, default=0.0, help="GUI: play N x slower than real time (0 = as fast as possible)")
+parser.add_argument("--hold_open", action="store_true", help="GUI: keep the window open after the run")
+parser.add_argument("--cutaway", action="store_true", help="hide env 0's panel on the camera side of the latch slot")
 AppLauncher.add_app_launcher_args(parser)
 args = parser.parse_args()
-args.headless = True
+GUI = "kit" in str(args.visualizer or "")  # headless unless --viz kit
 simulation_app = AppLauncher(args).app
 
 import gzip  # noqa: E402
@@ -72,7 +79,7 @@ K_ROT, D_ROT = 5.0, 0.01  # N*m/rad, N*m*s/rad
 CHAIN = ["x", "y", "z", "rx", "ry", "rz"]
 TRACE_DT = 0.004
 RUN_ID = args.run_id or f"dt{round(1 / args.dt)}_it{args.pos_iters}_co{args.contact_offset * 1e3:g}"
-OUT = args.out / RUN_ID
+OUT = (args.out or Path(__file__).resolve().parents[1] / "results" / ("gui" if GUI else "contact_tuning")) / RUN_ID
 
 
 def origin(i):
@@ -166,7 +173,12 @@ def main():
     s_latch = ContactSensor(ContactSensorCfg(prim_path="/World/envs/env_.*/Rig/Plug/latch", filter_prim_paths_expr=filt,
                                              track_friction_forces=True, max_contact_data_count_per_prim=64))
     sim.reset()
+    if GUI:  # side view of env 0's port_1 from +Y, plug start to back stop
+        sim.set_camera_view([-0.006, 0.07, PANEL_Z + 0.01], [-0.006, 0.0, PANEL_Z])
+    if args.cutaway:
+        cutaway(get_current_stage(), VARIANTS[0][0])
     dev = sim.device
+    pace_t0, pace_sim = time.perf_counter(), 0.0
     names = rig.joint_names
     ji = {n: names.index(n) for n in CHAIN + ["latch_joint"]}
     seat = torch.tensor([GEOM[t].seat_depth for t, _, _ in VARIANTS], device=dev)
@@ -236,7 +248,12 @@ def main():
             tgt[:, ji["x"]] = x_t
             rig.actuators.target_command.set_position_index(value=tgt, full_data=True)
             rig.write_data_to_sim()
-            sim.step(render=False)
+            sim.step(render=GUI)
+            if GUI and args.slowmo > 0:
+                pace_sim += dt
+                lag = args.slowmo * pace_sim - (time.perf_counter() - pace_t0)
+                if lag > 0:
+                    time.sleep(lag)
             rig.update(dt)
             s_body.update(dt)
             s_latch.update(dt)
@@ -296,6 +313,19 @@ def main():
             })  # fmt: skip
         print(f"[check_contact] seed {seed}: latched {int(latched.sum())}/{N}, exploded {int(exploded.sum())}")
     save(rows, results, steps_done / max(t_wall, 1e-9))
+    if GUI and args.hold_open:
+        print("[check_contact] done; close the window to exit")
+        while simulation_app.is_running():
+            sim.render()
+
+
+def cutaway(stage, tier):
+    """Make env 0's panel prims on the +Y side of the latch slot invisible (colliders stay active)."""
+    half_slot = jack_geometry(DIMS, tier).slot_width / 2
+    cache = UsdGeom.BBoxCache(Usd.TimeCode.Default(), [UsdGeom.Tokens.default_])
+    for prim in Usd.PrimRange(stage.GetPrimAtPath("/World/envs/env_0/Panel")):
+        if prim.IsA(UsdGeom.Gprim) and cache.ComputeWorldBound(prim).ComputeAlignedRange().GetMin()[1] >= half_slot - 1e-6:
+            UsdGeom.Imageable(prim).MakeInvisible()
 
 
 def save(rows, results, steps_per_s):

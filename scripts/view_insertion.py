@@ -27,7 +27,7 @@ parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents
 parser.add_argument("--dt", type=float, default=1.0 / 120.0, help="physics dt (Arena default 1/120)")
 parser.add_argument("--speed", type=float, default=0.010, help="insertion speed, m/s")
 AppLauncher.add_app_launcher_args(parser)
-parser.set_defaults(headless=True, enable_cameras=True)
+parser.set_defaults(enable_cameras=True)  # headless unless --viz kit
 args_cli = parser.parse_args()
 
 app_launcher = AppLauncher(args_cli)
