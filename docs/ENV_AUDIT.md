@@ -166,3 +166,12 @@ Friction-mode cost at 16 envs (`scripts/bench_friction_mode.py`, 16 SO-101s on S
 dt 1/240, laptop RTX 4060, no cameras): `explicit` 251 physics steps/s (4022 env-steps/s, 6.5 GB RSS),
 `physx_joint` 222 physics steps/s (3547 env-steps/s, 5.0 GB RSS), i.e. −12 %. `physx_joint` is the env default
 (`patchbench/physics.py`). Re-measure at 64–256 envs on Brev, where the per-step CPU copy grows with num_envs.
+
+## 10. Contact sensing for the plug (P3, 19 Oct)
+
+- `ContactSensor.data.force_matrix_w` is the filtered **normal** force only. Along the RJ45 latch most of the axial
+  insertion load is friction: with normal forces alone the axial force read 0.1 N while the wrist spring carried
+  1.1 N. Set `track_friction_forces=True` and add `data.friction_forces_w`.
+- `friction_forces_w` is silently ~0 with the default `max_contact_data_count_per_prim=4` (the plug body has more
+  contacts than that); with 64 the normal + friction axial force matches the wrist spring force within ~5 %.
+- Filter on the panel's single kinematic rigid body (`/World/envs/env_.*/Panel`): one filter entry per env.
