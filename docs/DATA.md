@@ -76,3 +76,20 @@ flock ~/work/.isaac.lock ~/work/IsaacLab-Arena/.venv/bin/python scripts/gen_data
 
 Overnight on Brev, `scripts/brev/chain_overnight.sh` runs both steps: 480×640, `num_envs` sized from the L40S pilot,
 and a push to `$HF_USER/patchbench-so101-v0`.
+
+## Laptop pilot (19 Oct, datagen v0)
+
+Settings: loose tier, 1 latched episode per port, 1 env, cameras at 240×320, expert = `open_loop` with σ = 0.
+`results/datagen_v0/pilot_manifest.json`, `results/datagen_v0/pilot_frame_front_wrist.png` (front | wrist, mid-episode).
+
+| | port 0 | port 1 | port 2 |
+|---|---|---|---|
+| attempts → latched | 1 → 1 | 3 → 1 | 3 → 1 |
+| frames in saved episode | 182 | 154 | 180 |
+
+- The expert latched 3 of 7 attempts. Failed attempts ran to the 20 s timeout (600 frames each).
+- Throughput: 2.5 env-frames/s on the RTX 4060 laptop (one env, two cameras). This does **not** size the Brev run.
+  Measure `env_frames_per_s` on the L40S (`manifest.info.runs`) and pass it to the chain as `DATAGEN_FPS`.
+- Raw size: 26 MB per 182-frame episode at 240×320, so about 100 MB per episode at 480×640 (about 90 GB for 900 episodes).
+- Conversion: 93 frames/s (libsvtav1, 240×320, laptop CPU). The converted dataset loads with `LeRobotDataset`:
+  3 episodes, 516 frames; image tensors (3, 240, 320).

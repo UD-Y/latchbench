@@ -1,0 +1,117 @@
+{
+ "fps": 30,
+ "joint_names": [
+  "shoulder_pan",
+  "shoulder_lift",
+  "elbow_flex",
+  "wrist_flex",
+  "wrist_roll",
+  "gripper"
+ ],
+ "format_version": 1,
+ "episodes": [
+  {
+   "index": 0,
+   "file": "episodes/ep_000000.npz",
+   "task": "insert the cable into the left port",
+   "tier": "loose",
+   "port": 0,
+   "success": true,
+   "seed": 0,
+   "num_frames": 182,
+   "image_hw": [
+    240,
+    320
+   ],
+   "extra": {
+    "num_envs": 1,
+    "env_id": 0
+   }
+  },
+  {
+   "index": 1,
+   "file": "episodes/ep_000001.npz",
+   "task": "insert the cable into the middle port",
+   "tier": "loose",
+   "port": 1,
+   "success": true,
+   "seed": 100,
+   "num_frames": 154,
+   "image_hw": [
+    240,
+    320
+   ],
+   "extra": {
+    "num_envs": 1,
+    "env_id": 0
+   }
+  },
+  {
+   "index": 2,
+   "file": "episodes/ep_000002.npz",
+   "task": "insert the cable into the right port",
+   "tier": "loose",
+   "port": 2,
+   "success": true,
+   "seed": 200,
+   "num_frames": 180,
+   "image_hw": [
+    240,
+    320
+   ],
+   "extra": {
+    "num_envs": 1,
+    "env_id": 0
+   }
+  }
+ ],
+ "info": {
+  "runs": [
+   {
+    "tier": "loose",
+    "port": 0,
+    "num_envs": 1,
+    "height": 240,
+    "width": 320,
+    "attempts": 1,
+    "successes": 1,
+    "env_frames": 183,
+    "wall_s": 75.7,
+    "env_frames_per_s": 2.42,
+    "seed": 0,
+    "policy_type": "expert",
+    "time": "2026-10-19T20:45:41"
+   },
+   {
+    "tier": "loose",
+    "port": 1,
+    "num_envs": 1,
+    "height": 240,
+    "width": 320,
+    "attempts": 3,
+    "successes": 1,
+    "env_frames": 1355,
+    "wall_s": 521.7,
+    "env_frames_per_s": 2.6,
+    "seed": 100,
+    "policy_type": "expert",
+    "time": "2026-10-19T20:54:48"
+   },
+   {
+    "tier": "loose",
+    "port": 2,
+    "num_envs": 1,
+    "height": 240,
+    "width": 320,
+    "attempts": 3,
+    "successes": 1,
+    "env_frames": 1381,
+    "wall_s": 546.7,
+    "env_frames_per_s": 2.53,
+    "seed": 200,
+    "policy_type": "expert",
+    "time": "2026-10-19T21:04:26"
+   }
+  ]
+ }
+}

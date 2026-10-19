@@ -22,7 +22,7 @@
 #   EXPERT_CONTROLLER [policy default: open_loop | oracle_spiral | telemetry_spiral]
 #   GROOT_STEPS [6000]  GROOT_BATCH [32]  NO_POWEROFF [0]  SKIP_STAGES (e.g. "1,4")  VCODEC [libsvtav1]
 # Time-estimate inputs (measure them on the L40S: gen_data prints env-frames/s, to_lerobot prints frames/s):
-#   DATAGEN_FPS [60, placeholder]  EP_SECONDS [10]  DATAGEN_SUCCESS [0.8]  ENCODE_FPS [60, placeholder]
+#   DATAGEN_FPS [60, placeholder]  EP_SECONDS [6]  FAIL_SECONDS [20]  DATAGEN_SUCCESS [0.5]  ENCODE_FPS [60, placeholder]
 #   SWEEP_FPS [1500, placeholder]  SWEEP_EP_SECONDS [12]  GROOT_SEC_PER_STEP [0.6, placeholder]  STARTUP_S [120]
 set -euo pipefail
 
@@ -61,8 +61,9 @@ SKIP_STAGES="${SKIP_STAGES:-}"
 VCODEC="${VCODEC:-libsvtav1}"
 
 DATAGEN_FPS="${DATAGEN_FPS:-60}"
-EP_SECONDS="${EP_SECONDS:-10}"
-DATAGEN_SUCCESS="${DATAGEN_SUCCESS:-0.8}"
+EP_SECONDS="${EP_SECONDS:-6}"      # laptop pilot: latched episodes 154-182 frames
+FAIL_SECONDS="${FAIL_SECONDS:-20}"  # failed attempts run to the timeout
+DATAGEN_SUCCESS="${DATAGEN_SUCCESS:-0.5}"  # laptop pilot: expert latched 3 of 7 on loose
 ENCODE_FPS="${ENCODE_FPS:-60}"
 SWEEP_FPS="${SWEEP_FPS:-1500}"
 SWEEP_EP_SECONDS="${SWEEP_EP_SECONDS:-12}"
@@ -86,18 +87,19 @@ IFS=, read -r -a SWEEP_TIER_LIST <<< "$SWEEP_TIERS"
 estimate() {
   python3 - "$@" <<'PY'
 import sys
-(eps_per_port, n_tiers, ep_s, success, dfps, efps, sweep_n, n_sweep_tiers, n_pol, sweep_ep_s, sfps,
+(eps_per_port, n_tiers, ep_s, fail_s, success, dfps, efps, sweep_n, n_sweep_tiers, n_pol, sweep_ep_s, sfps,
  steps, sps, startup) = map(float, sys.argv[1:])
 fps = 30
 ok_eps = eps_per_port * 3 * n_tiers
 frames = ok_eps * ep_s * fps
-gen = frames / success / dfps + startup * 3 * n_tiers           # one Isaac launch per (tier, port)
+sim_frames = frames + ok_eps * (1 / success - 1) * fail_s * fps  # failures run to the timeout
+gen = sim_frames / dfps + startup * 3 * n_tiers                  # one Isaac launch per (tier, port)
 enc = frames / efps
 sweep = n_pol * n_sweep_tiers * sweep_n * sweep_ep_s * fps / sfps + startup * n_pol
 groot = steps * sps
 crit = gen + max(sweep, enc) + groot                               # stage 2 runs alongside stage 3
 h = lambda s: f"{s / 3600:5.2f} h"
-print(f"  1 gen_data   {int(ok_eps):5d} latched eps, {frames / 1e3:.0f} k frames, {frames / success / 1e3:.0f} k sim frames @ {dfps:g} fps  {h(gen)}")
+print(f"  1 gen_data   {int(ok_eps):5d} latched eps, {frames / 1e3:.0f} k frames, {sim_frames / 1e3:.0f} k sim frames @ {dfps:g} fps  {h(gen)}")
 print(f"  2 to_lerobot {frames / 1e3:.0f} k frames @ {efps:g} fps encode (background, overlaps 3)            {h(enc)}")
 print(f"  3 sweeps     {int(n_pol)} policies x {int(n_sweep_tiers)} tiers x n={int(sweep_n)} @ {sfps:g} env-fps            {h(sweep)}")
 print(f"  4 groot      {int(steps)} steps x {sps:g} s/step                                      {h(groot)}")
@@ -124,9 +126,9 @@ Stages:
   4 groot       GR00T N1.7, $GROOT_STEPS steps, batch $GROOT_BATCH, push to $MODEL_REPO  $(stage_status 4)
   5 pack        results tarball, then poweroff
 Estimates (inputs: DATAGEN_FPS=$DATAGEN_FPS ENCODE_FPS=$ENCODE_FPS SWEEP_FPS=$SWEEP_FPS GROOT_SEC_PER_STEP=$GROOT_SEC_PER_STEP
-           EP_SECONDS=$EP_SECONDS DATAGEN_SUCCESS=$DATAGEN_SUCCESS; placeholders until measured on the L40S):
+           EP_SECONDS=$EP_SECONDS FAIL_SECONDS=$FAIL_SECONDS DATAGEN_SUCCESS=$DATAGEN_SUCCESS; placeholders until measured on the L40S):
 EOF
-  estimate "$EPISODES_PER_PORT" "${#TIER_LIST[@]}" "$EP_SECONDS" "$DATAGEN_SUCCESS" "$DATAGEN_FPS" "$ENCODE_FPS" \
+  estimate "$EPISODES_PER_PORT" "${#TIER_LIST[@]}" "$EP_SECONDS" "$FAIL_SECONDS" "$DATAGEN_SUCCESS" "$DATAGEN_FPS" "$ENCODE_FPS" \
     "$SWEEP_N" "${#SWEEP_TIER_LIST[@]}" "${#SWEEP_POLICIES[@]}" "$SWEEP_EP_SECONDS" "$SWEEP_FPS" \
     "$GROOT_STEPS" "$GROOT_SEC_PER_STEP" "$STARTUP_S"
 }
