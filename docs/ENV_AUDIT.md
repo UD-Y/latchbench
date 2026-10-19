@@ -175,3 +175,59 @@ dt 1/240, laptop RTX 4060, no cameras): `explicit` 251 physics steps/s (4022 env
 - `friction_forces_w` is silently ~0 with the default `max_contact_data_count_per_prim=4` (the plug body has more
   contacts than that); with 64 the normal + friction axial force matches the wrist spring force within ~5 %.
 - Filter on the panel's single kinematic rigid body (`/World/envs/env_.*/Panel`): one filter entry per env.
+
+## 11. Arena env `rj45_panel` (P5, 19 Oct)
+
+Read from Arena `aa36f19` / Isaac Lab `bb0c8e1` while building `patchbench/environment.py`:
+
+- External env factories still use the argparse path: `ExampleEnvironmentBase.get_env(args_cli)` +
+  `add_cli_args(subparser)`; flags go after the `rj45_panel` subcommand. A subcommand flag with the same name as a
+  main-parser flag (e.g. a PolicyCfg field) silently overwrites it in the shared namespace, so the env's estimate-noise
+  flag is `--port_est_noise_mm`, not `--pose_noise_mm` (the scripted policies' flag). Headless is the default
+  (there is no `--headless`; `--viz kit` opens a GUI).
+- `IsaacLabArenaEnvironment(env_cfg_callback=...)` is where dt / decimation / PhysX scene settings are set
+  (`physics.py`); the callback runs after Arena has put its own `PhysxCfg()` on `env_cfg.sim.physics`.
+- Scene, observations, events, metrics are merged from Scene + embodiment + task (`arena_env_builder.compose_manager_cfg`).
+  The SO-101 embodiment's `observation_config` is replaced by the env's own (`policy` + `privileged` groups); Arena
+  adds `camera_obs` when `--enable_cameras`.
+- Success is `TaskSuccessTerm` over `ProgressObjective`s. With `subtasks_are_sequential=True` the objectives need
+  `parent_subtask_idx` (normally set by `CompositeTaskBase`; set by hand here, one per stage), and the tracker advances
+  at most one subtask per step, so success fires up to 4 control steps after the latch predicate holds.
+- `record_post_step` runs before resets and `record_pre_reset` before the reset events, so per-episode metrics are
+  recorded in `record_pre_reset` (as `metrics/success_rate.py` does) from the stage tracker.
+- Startup events run after `load_managers`; observation terms are first called inside `load_managers` (shape
+  inference), so shared per-env state is created lazily by whichever term asks first (`patchbench.task.get_state`).
+- Spawners: `@clone` calls the spawn function once for env_0 and copies the prim spec to the other envs, then applies
+  `activate_contact_sensors` to every rigid body under the prim. The plug is added inside the robot's spawn function
+  (`objects.spawn_robot_with_plug`): `plug.usd` referenced at `<Robot>/Plug`, `UsdPhysics.FixedJoint`
+  `<Robot>/plug_grasp` from `gripper` to `Plug/body`. PhysX makes `body` and `latch` links of the SO-101 articulation
+  (robot joint `latch_joint`, driven by an `ImplicitActuatorCfg(stiffness=None, damping=None)` that keeps the USD spring).
+- `pxr` (core) imports without Kit in the Arena venv, `PhysxSchema` does not; the CPU venv has no `pxr` at all.
+
+Layout (reachability with `isaaclab_so101.ee_pose.natural_ik`, `tests/test_env_layout.py`): a 5-DOF arm can hold a
+horizontal plug at any yaw only in the gimbal case, jaws pointing straight down (wrist roll then absorbs the pan
+azimuth). So the plug is held across the jaws (plug +X = gripper +Y, latch side along the jaws; the mirror mounting
+leaves the wrist camera looking at the cable) and the panel faces the robot: port_1 mouth at env (0.22, 0, 0.05) m. Over the full randomization (+-10 mm, +-3 deg yaw/pitch), all three ports,
+tip from -15 mm to seat + 3 mm, the worst joint is 0.35 rad (20 deg) inside its limit (Wrist_Pitch).
+
+Runs (laptop RTX 4060, headless, one Isaac process at a time; `results/arena_env_v0/`):
+
+| Run | Result | Wall | Peak RSS |
+|---|---|---|---|
+| policy_runner zero_action, 2 envs, 2 episodes, `loose` / `medium` / `spec` | exit 0 on all three; episodes time out at 20 s (zero joint goals swing the plug into the panel: peak axial 11 N, one overload onset) | 2:33 / 2:03 / 2:43 | 6.6 / 6.1 / 6.1 GB |
+| check_env, 1 env, cameras 240x320, `medium` | `medium_front.png`, `medium_wrist.png` | 2:46 | 9.8 GB |
+| check_env `--bench 300`, 16 envs, state-only, `physx_joint` | **168 physics steps/s = 0.35x real time** (2691 env-physics-steps/s) | 2:52 | 8.2 GB |
+| same, `--servo_friction_mode explicit` | 190 physics steps/s = 0.40x real time (3042 env-steps/s) | | 7.1 GB |
+| check_env `--push`, `loose`, nominal pose, joint-space IK + tip-error integral | plug enters the middle jack to 12.1 mm (stage `aligned`), latch cammed to -4 deg, then stalls at 4.8 N axial with the command at seat + 3 mm | | |
+
+Throughput is under the ~0.5x mark at 16 envs. The `explicit` friction fallback buys only 13 %: the cost is dt 1/480 x
+32 position iterations on a 9-link articulation (the G1 contact settings), not the per-step friction write. Kept
+`physx_joint`. A 20-episode sweep at ~10 s per episode is ~200 env-seconds, about 36 s wall with 16 envs. That is fine
+on the laptop; full n=200 x 3 tiers x 3 policies sweeps belong on Brev.
+
+Wrist camera: with the isaaclab_so101 mount, the camera looks along the plug, and the plug body hides the panel
+(30 mm beyond the tip at reset). The front (`external_camera`, on the base) view shows plug, panel and stand.
+
+Joint-space push (`--push`): when the tip blocks on the lead-in, the axial load times the 0.16 m wrist-pitch-to-TCP
+lever rotates the P-only wrist servo, and the tip slides down the panel face (13 mm in one run with fast alignment).
+Controllers must align before pushing and keep the push force low until the tip is inside.

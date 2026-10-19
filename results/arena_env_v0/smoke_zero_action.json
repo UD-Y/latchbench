@@ -1,0 +1,23 @@
+{
+ "loose": {
+  "cmd": "policy_runner --policy_type zero_action --num_episodes 2 --num_envs 2 rj45_panel --tier loose",
+  "metrics": "{'num_episodes': 2, 'stage_funnel': {'reached': 0.0, 'contacted': 0.0, 'aligned': 0.0, 'seated': 0.0, 'latched': 0.0}, 'peak_axial_force_N': 11.433051824569702, 'mean_time_to_latch_s': nan, 'overload_events': 1.0, 'wrong_port': 0.0}",
+  "wall": "2:33.49",
+  "peak_rss_GB": 6.64,
+  "exit": 0
+ },
+ "medium": {
+  "cmd": "policy_runner --policy_type zero_action --num_episodes 2 --num_envs 2 rj45_panel --tier medium",
+  "metrics": "{'num_episodes': 2, 'stage_funnel': {'reached': 0.0, 'contacted': 0.0, 'aligned': 0.0, 'seated': 0.0, 'latched': 0.0}, 'peak_axial_force_N': 10.9779771566391, 'mean_time_to_latch_s': nan, 'overload_events': 1.0, 'wrong_port': 0.0}",
+  "wall": "2:03.47",
+  "peak_rss_GB": 6.13,
+  "exit": 0
+ },
+ "spec": {
+  "cmd": "policy_runner --policy_type zero_action --num_episodes 2 --num_envs 2 rj45_panel --tier spec",
+  "metrics": "{'num_episodes': 2, 'stage_funnel': {'reached': 0.0, 'contacted': 0.0, 'aligned': 0.0, 'seated': 0.0, 'latched': 0.0}, 'peak_axial_force_N': 11.448871612548828, 'mean_time_to_latch_s': nan, 'overload_events': 1.0, 'wrong_port': 0.0}",
+  "wall": "2:43.75",
+  "peak_rss_GB": 6.11,
+  "exit": 0
+ }
+}
