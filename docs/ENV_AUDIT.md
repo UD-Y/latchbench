@@ -137,3 +137,27 @@ Defaults: `tune_llm=False`, `tune_visual=False`, `tune_projector=True`, `tune_di
 5. No `CompletionCriteria`; use `TaskTerminationCfg` + `ProgressObjective`.
 6. Isaac Sim MCP is not configured on the laptop; visual checks are headless camera captures.
 7. LeRobot must be 0.6.1 for GR00T N1.7.
+
+## 9. Explicit actuators on PhysX (P4, 19 Oct)
+
+Read from `isaaclab/actuators/actuator_collection.py` and `isaaclab/actuators/actuator_control.py` at `bb0c8e1`:
+
+- `ActuatorCollection._build_groups` constructs explicit groups with
+  `cfg, joint_names, joint_ids, num_envs, device, stiffness, damping, actuator_velocity_limit, actuator_effort_limit`
+  (so the actuator `__init__` must accept `stiffness`/`damping`).
+- For explicit groups it writes the cfg's `armature`, `friction`, `dynamic_friction`, `viscous_friction`,
+  `joint_effort_limit` and `joint_velocity_limit` to PhysX, and **zero** drive stiffness/damping.
+- PhysX joint `friction` is a static friction **effort** [N·m] on Isaac Sim ≥ 5 (`ArticulationData.joint_friction_coeff`).
+  `write_joint_friction_coefficient_to_sim_index` goes through a CPU copy; writing it every physics step from the
+  actuator cost ~3 % wall time with 1 env (not yet measured at 16+ envs).
+- Commands: `robot.actuators.target_command.set_position_index(value=..., joint_ids=...)`, then
+  `write_data_to_sim()`; `compute()` gets `control_action.joint_positions` as the goal.
+- `data.joint_acc` is finite-differenced from `joint_vel`; `data.mass_matrix` (6×6 for the fixed-base SO-101) and
+  `data.gravity_compensation_forces` come from PhysX. `M·q̈ − τ_applied` reproduces the gravity torque within 5 %
+  in a static hold (shoulder 0.191 vs 0.183 N·m, elbow 0.328 vs 0.337 N·m), so it is used as BAM's external torque.
+- SO-101 USD: the default prim `/so101_new_calib` is referenced at the robot prim path, so links are
+  `<prim_path>/gripper`, `<prim_path>/jaw`. Contact-sensor filters must name one link each (a `.*` filter matched
+  10 prims and failed).
+- `simulation_app.close()` in a `finally` hides exceptions raised before it: print the traceback first.
+
+Hold test (`scripts/hold_test.py`, 1 env, no cameras, 30 s wall, 4.2 GB RSS): see `results/hold_test*/summary.json`.

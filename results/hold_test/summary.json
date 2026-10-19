@@ -1,0 +1,81 @@
+{
+ "friction_mode": "explicit",
+ "physics_dt": 0.004166666666666667,
+ "hold": {
+  "sag_deg_sts3215": {
+   "Rotation": -0.0,
+   "Pitch": 1.0299999713897705,
+   "Elbow": 1.7599999904632568,
+   "Wrist_Pitch": 0.3499999940395355,
+   "Wrist_Roll": -0.10999999940395355,
+   "Jaw": 0.07999999821186066
+  },
+  "sag_deg_implicit_pd": {
+   "Rotation": 0.0,
+   "Pitch": 0.36000001430511475,
+   "Elbow": 0.7799999713897705,
+   "Wrist_Pitch": 0.3700000047683716,
+   "Wrist_Roll": -0.009999999776482582,
+   "Jaw": 0.009999999776482582
+  },
+  "present_load": {
+   "Rotation": 0,
+   "Pitch": -53,
+   "Elbow": -93,
+   "Wrist_Pitch": -24,
+   "Wrist_Roll": 0,
+   "Jaw": 0
+  },
+  "present_current": {
+   "Rotation": 0,
+   "Pitch": 22,
+   "Elbow": 38,
+   "Wrist_Pitch": 10,
+   "Wrist_Roll": 1,
+   "Jaw": 0
+  },
+  "external_torque_estimate": {
+   "Rotation": 0.0,
+   "Pitch": 0.19120000302791595,
+   "Elbow": 0.3280999958515167,
+   "Wrist_Pitch": 0.07699999958276749,
+   "Wrist_Roll": 0.00430000014603138,
+   "Jaw": -0.004900000058114529
+  },
+  "gravity_torque": {
+   "Rotation": -0.0,
+   "Pitch": 0.18330000340938568,
+   "Elbow": 0.3368000090122223,
+   "Wrist_Pitch": 0.07429999858140945,
+   "Wrist_Roll": -0.0012000000569969416,
+   "Jaw": 0.0006000000284984708
+  },
+  "max_abs_joint_vel_end": 0.00254391529597342
+ },
+ "step": {
+  "settle_time_s(1deg_band)": 0.32916666666666666,
+  "final_error_deg": 2.2703034402500517,
+  "overshoot_deg": 3.6761480436222596,
+  "peak_duty": 0.9700000286102295,
+  "peak_current_A": 1.3394296169281006
+ },
+ "press": {
+  "max_contact_force_N": 5.608903408050537,
+  "contact_frames": 206,
+  "load_pitch_free_to_max": [
+   -35.970588235294116,
+   316.0
+  ],
+  "load_elbow_free_to_max": [
+   -98.82352941176471,
+   220.0
+  ],
+  "press_direction_w": [
+   0.28600001335144043,
+   0.07999999821186066,
+   -0.9549999833106995
+  ],
+  "spearman_like_corr_load_pitch_vs_force": 0.9961299802148779
+ },
+ "wall_s": 21.71958017349243
+}
