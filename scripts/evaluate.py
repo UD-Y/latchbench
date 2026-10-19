@@ -47,7 +47,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--n", type=int, default=100, help="episodes per tier")
     ap.add_argument("--num_envs", type=int, default=16)
     ap.add_argument("--seed", type=int, default=0)
-    ap.add_argument("--pose_noise_mm", type=float, default=1.0, help="port-pose estimate noise sigma [mm]")
+    ap.add_argument("--pose_noise_mm", type=float, default=None,
+                    help="port-pose estimate noise sigma [mm] (default 1; expert 0, CLAUDE.md section 7)")
     ap.add_argument("--port", default="random", help="target port {0,1,2,random}")
     ap.add_argument("--out", default=str(ROOT / "results"))
     ap.add_argument("--enable_cameras", action="store_true", help="forced on for --policy lerobot")
@@ -61,11 +62,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--env_arg", action="append", default=[],
                     help="extra env flag passed after the env name, e.g. --env_arg=--foo=1 (repeatable)")
     ap.add_argument("--_worker", default=None, help=argparse.SUPPRESS)
+    # debug: run the worker machinery on another Arena env / registered policy (no StageTracker results)
+    ap.add_argument("--_env", default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--_arena_policy", default=None, help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
     if args.policy == "lerobot":
         if not args.policy_path:
             ap.error("--policy lerobot needs --policy.path")
         args.enable_cameras = True
+    if args.pose_noise_mm is None:
+        args.pose_noise_mm = 0.0 if args.policy == "expert" else 1.0
     args.tiers = [t for t in args.tiers.split(",") if t]
     if args.name is None:
         args.name = args.policy if args.policy != "lerobot" else "lerobot_" + _slug(args.policy_path)
@@ -96,6 +102,8 @@ def worker_config(args: argparse.Namespace, tier: str) -> dict:
         "endpoint": args.endpoint,
         "n_action_steps": args.n_action_steps,
         "env_args": list(args.env_arg),
+        "env_name": args._env,
+        "arena_policy": args._arena_policy,
         "jsonl": str(d / f"{tier}.jsonl"),
         "meta": str(d / f"{tier}.meta.json"),
     }
@@ -109,9 +117,14 @@ def arena_base_argv(cfg: dict) -> list[str]:
     return argv
 
 
-def arena_env_argv(cfg: dict) -> list[str]:
+def arena_env_argv(cfg: dict, policy_adds_noise: bool = True) -> list[str]:
+    """Env subcommand flags. The port-pose estimate noise is applied once: by the policy when its cfg has
+    ``pose_noise_mm`` (scripted controllers), otherwise by the env's ``--port_est_noise_mm`` (obs ``port_pos_est``)."""
+    if cfg.get("env_name"):  # debug: built-in Arena env
+        return [cfg["env_name"], *cfg["env_args"]]
+    env_noise = 0.0 if policy_adds_noise else cfg["pose_noise_mm"]
     return ["--external_environment_class_path", ENV_CLASS, ENV_NAME, "--tier", cfg["tier"],
-            "--pose_noise_mm", str(cfg["pose_noise_mm"]), "--port", str(cfg["port"]), *cfg["env_args"]]
+            "--port_est_noise_mm", str(env_noise), "--port", str(cfg["port"]), *cfg["env_args"]]
 
 
 def launch_worker(cfg: dict, cfg_path: Path, log_path: Path) -> None:
@@ -239,20 +252,23 @@ def worker(cfg: dict) -> None:
         policy_flags: list[str] = []
         policy_cls = None
         if cfg["policy"] in SCRIPTED:
-            import patchbench.policies  # noqa: F401  (registers open_loop / telemetry_spiral / oracle_spiral / expert)
             from isaaclab_arena.assets.registries import PolicyRegistry
             from isaaclab_arena.evaluation.policy_runner import get_policy_cls
 
-            policy_cls = get_policy_cls(cfg["policy"])
+            policy_type = cfg.get("arena_policy") or cfg["policy"]
+            if not cfg.get("arena_policy"):
+                import patchbench.policies  # noqa: F401  (registers open_loop / telemetry_spiral / oracle_spiral / expert)
+            policy_cls = get_policy_cls(policy_type)
             fields = set(getattr(PolicyRegistry().get_policy_cfg_type(policy_cls), "__dataclass_fields__", {}))
             if "pose_noise_mm" in fields:
                 policy_flags += ["--pose_noise_mm", str(cfg["pose_noise_mm"])]
             for f in POLICY_SEED_FIELDS:
                 if f in fields:
                     policy_flags += [f"--{f}", str(cfg["seed"])]
-            policy_flags = ["--policy_type", cfg["policy"], *policy_flags]
+            policy_flags = ["--policy_type", policy_type, *policy_flags]
 
-        sys.argv = [sys.argv[0], *base, *policy_flags, *arena_env_argv(cfg)]
+        policy_adds_noise = "--pose_noise_mm" in policy_flags
+        sys.argv = [sys.argv[0], *base, *policy_flags, *arena_env_argv(cfg, policy_adds_noise)]
         add_policy_runner_arguments(parser)
         parser = get_isaaclab_arena_environments_cli_parser(parser)
         if policy_cls is not None:
@@ -260,8 +276,8 @@ def worker(cfg: dict) -> None:
         args_cli, unknown = parser.parse_known_args(sys.argv[1:])
         if cfg["enable_cameras"]:
             args_cli.enable_cameras = True
-        assert args_cli.example_environment == ENV_NAME, args_cli.example_environment
-        assert "--tier" not in unknown, f"{ENV_NAME} does not accept --tier: {unknown}"
+        assert args_cli.example_environment == (cfg.get("env_name") or ENV_NAME), args_cli.example_environment
+        assert cfg.get("env_name") or "--tier" not in unknown, f"{ENV_NAME} does not accept --tier: {unknown}"
         if unknown:
             print(f"[evaluate] WARNING: unused CLI args {unknown}", flush=True)
 

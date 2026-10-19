@@ -26,7 +26,7 @@ flock ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers l
 | `--n` | 100 | episodes per tier (200 for headline numbers) |
 | `--num_envs` | 16 | parallel envs (laptop: ≤ 32 state-only, ≤ 2 with cameras) |
 | `--seed` | 0 | Arena `--seed`, also passed to the policy's noise RNG if its cfg has `noise_seed`/`policy_seed` |
-| `--pose_noise_mm` | 1.0 | σ of the port-pose estimate given to scripted controllers |
+| `--pose_noise_mm` | 1.0 (expert 0.0) | σ of the port-pose estimate given to scripted controllers: passed to the policy cfg (`pose_noise_mm`) if it has that field, else to the env as `--port_est_noise_mm` (never both) |
 | `--port` | `random` | target port `0,1,2` or `random` |
 | `--out` | `results/` | output root |
 | `--dry_run` | | print the per-tier worker configs and Arena argv, start nothing |

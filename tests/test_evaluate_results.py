@@ -65,6 +65,8 @@ def test_write_and_load(tmp_path):
     rows = list(csv.DictReader(open(tmp_path / "open_loop" / "loose_episodes.csv")))
     assert [row["stage"] for row in rows] == ["latched", "none"]
     (tmp_path / "open_loop" / "notes.json").write_text('{"x": 1}')  # not a result: ignored
+    (tmp_path / "other_run").mkdir()
+    (tmp_path / "other_run" / "loose.json").write_text(json.dumps(r))  # policy != directory: ignored
     assert [x["tier"] for x in rio.load_results(tmp_path)] == ["loose"]
     png = rio.plot_funnel([r], tmp_path / "open_loop" / "funnel.png")
     assert png.stat().st_size > 1000

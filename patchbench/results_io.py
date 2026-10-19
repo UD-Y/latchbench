@@ -172,14 +172,16 @@ def read_jsonl(path: str | Path) -> list[dict[str, Any]]:
 
 
 def load_results(results_dir: str | Path) -> list[dict[str, Any]]:
-    """All ``results/*/<tier>.json`` files that follow the section 6.2 schema."""
+    """All ``results/<policy>/<tier>.json`` files that follow the section 6.2 schema (directory and file name must
+    match the ``policy`` and ``tier`` fields, so other JSONs under results/ are ignored)."""
     out = []
     for p in sorted(Path(results_dir).glob("*/*.json")):
         try:
             r = json.loads(p.read_text())
         except (OSError, json.JSONDecodeError):
             continue
-        if isinstance(r, dict) and {"policy", "tier", "n", "success", "funnel"} <= r.keys():
+        if (isinstance(r, dict) and {"policy", "tier", "n", "success", "funnel"} <= r.keys()
+                and r["policy"] == p.parent.name and r["tier"] == p.stem):
             out.append(r)
     return out
 
