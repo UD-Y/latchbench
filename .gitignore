@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+# datasets, checkpoints and raw rollouts go to the HF Hub, not git
+data/
+datasets/
+outputs/
+checkpoints/
+*.npz
+*.hdf5
+logs/
