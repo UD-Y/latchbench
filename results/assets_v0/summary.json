@@ -1,0 +1,26 @@
+{
+  "tier": "medium",
+  "dt": 0.008333333333333333,
+  "speed_m_s": 0.01,
+  "max_deflection_deg": -7.907069237955519,
+  "max_deflection_depth_mm": 13.892743736505508,
+  "deflected_gt_3deg": true,
+  "snapped_back_within_2deg": true,
+  "snap_depth_mm": 15.29688946902752,
+  "expected_snap_depth_mm": 15.5,
+  "latch_deg_end_of_hold": 0.0058796527040321026,
+  "depth_end_of_push_mm": 16.06192998588085,
+  "depth_end_of_hold_mm": 16.06770232319832,
+  "max_depth_mm": 16.06770232319832,
+  "seat_depth_mm": 16.0,
+  "depth_after_pull_mm": 15.118871815502644,
+  "pull_target_depth_mm": 14.000000000000002,
+  "retained_after_pull": true,
+  "nan": false,
+  "frames": {
+    "before": 48,
+    "deflection": 478,
+    "snapped": 622,
+    "pulled": 802
+  }
+}

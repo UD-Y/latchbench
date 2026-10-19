@@ -1,0 +1,641 @@
+#usda 1.0
+(
+    defaultPrim = "Panel"
+    kilogramsPerUnit = 1
+    metersPerUnit = 1
+    upAxis = "Z"
+)
+
+def Xform "Panel" (
+    prepend apiSchemas = ["PhysicsRigidBodyAPI"]
+    customData = {
+        dictionary patchbench = {
+            double catch_depth = 0.0024999999999999988
+            double catch_start = 0.0010999999999999988
+            double clearance = 0.00025
+            string frame = "origin at plate front face, centre of port_1; ports rotated 180 deg about X (latch side down)"
+            double height = 0.0071
+            double latched_play = 0.0005
+            double lip_start = 0.0008660254037844387
+            double outer_width = 0.01418
+            double pocket_height = 0.0023649019210779084
+            double seat_depth = 0.016
+            double slot_width = 0.0045000000000000005
+            double snap_depth = 0.0155
+            string tier = "medium"
+            double width = 0.01218
+            double z_bottom_outer = -0.00555
+            double z_top_outer = 0.007914901921077909
+        }
+    }
+)
+{
+    bool physics:kinematicEnabled = 1
+
+    def Xform "port_0"
+    {
+        quatd xformOp:orient = (0, 1, 0, 0)
+        double3 xformOp:translate = (0, 0.015, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+        def Cube "wall_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.001, 0.01346490192107791)
+            double3 xformOp:translate = (0.00843301270189222, 0.00659, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "wall_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.001, 0.01346490192107791)
+            double3 xformOp:translate = (0.00843301270189222, -0.00659, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "wall_bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.01218, 0.002)
+            double3 xformOp:translate = (0.00843301270189222, 0, -0.00455)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "shoulder_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.0038399999999999997, 0.004364901921077908)
+            double3 xformOp:translate = (0.00843301270189222, 0.00417, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "shoulder_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.0038399999999999997, 0.004364901921077908)
+            double3 xformOp:translate = (0.00843301270189222, -0.00417, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "top_lip" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.00023397459621556007, 0.0045000000000000005, 0.004364901921077908)
+            double3 xformOp:translate = (0.0009830127018922187, 0, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "catch_ledge" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.15, 0.15)]
+            double size = 1
+            double3 xformOp:scale = (0.0014, 0.0045000000000000005, 0.004364901921077908)
+            double3 xformOp:translate = (0.0017999999999999986, 0, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "pocket_roof" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.013500000000000002, 0.0045000000000000005, 0.002)
+            double3 xformOp:translate = (0.00925, 0, 0.006914901921077909)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "back_stop" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.0020000000000000018, 0.01418, 0.01346490192107791)
+            double3 xformOp:translate = (0.017, 0, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Mesh "lead_in_top" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00709, 0.00405), (0.0008660254, -0.00709, 0.00355), (0.0008660254, -0.00709, 0.007914902), (0, -0.00709, 0.007914902), (0, 0.00709, 0.00405), (0.0008660254, 0.00709, 0.00355), (0.0008660254, 0.00709, 0.007914902), (0, 0.00709, 0.007914902)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00709, -0.00405), (0, -0.00709, -0.00555), (0.0008660254, -0.00709, -0.00555), (0.0008660254, -0.00709, -0.00355), (0, 0.00709, -0.00405), (0, 0.00709, -0.00555), (0.0008660254, 0.00709, -0.00555), (0.0008660254, 0.00709, -0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, 0.00659, -0.00355), (0, 0.00709, -0.00355), (0.0008660254, 0.00709, -0.00355), (0.0008660254, 0.00609, -0.00355), (0, 0.00659, 0.00355), (0, 0.00709, 0.00355), (0.0008660254, 0.00709, 0.00355), (0.0008660254, 0.00609, 0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00659, -0.00355), (0.0008660254, -0.00609, -0.00355), (0.0008660254, -0.00709, -0.00355), (0, -0.00709, -0.00355), (0, -0.00659, 0.00355), (0.0008660254, -0.00609, 0.00355), (0.0008660254, -0.00709, 0.00355), (0, -0.00709, 0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Xform "mouth"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+
+        def Xform "seat"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0.016, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+
+        def Xform "catch"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0.0024999999999999988, 0, 0.00355)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+    }
+
+    def Xform "port_1"
+    {
+        quatd xformOp:orient = (0, 1, 0, 0)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+        def Cube "wall_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.001, 0.01346490192107791)
+            double3 xformOp:translate = (0.00843301270189222, 0.00659, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "wall_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.001, 0.01346490192107791)
+            double3 xformOp:translate = (0.00843301270189222, -0.00659, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "wall_bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.01218, 0.002)
+            double3 xformOp:translate = (0.00843301270189222, 0, -0.00455)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "shoulder_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.0038399999999999997, 0.004364901921077908)
+            double3 xformOp:translate = (0.00843301270189222, 0.00417, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "shoulder_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.0038399999999999997, 0.004364901921077908)
+            double3 xformOp:translate = (0.00843301270189222, -0.00417, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "top_lip" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.00023397459621556007, 0.0045000000000000005, 0.004364901921077908)
+            double3 xformOp:translate = (0.0009830127018922187, 0, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "catch_ledge" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.15, 0.15)]
+            double size = 1
+            double3 xformOp:scale = (0.0014, 0.0045000000000000005, 0.004364901921077908)
+            double3 xformOp:translate = (0.0017999999999999986, 0, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "pocket_roof" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.013500000000000002, 0.0045000000000000005, 0.002)
+            double3 xformOp:translate = (0.00925, 0, 0.006914901921077909)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "back_stop" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.0020000000000000018, 0.01418, 0.01346490192107791)
+            double3 xformOp:translate = (0.017, 0, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Mesh "lead_in_top" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00709, 0.00405), (0.0008660254, -0.00709, 0.00355), (0.0008660254, -0.00709, 0.007914902), (0, -0.00709, 0.007914902), (0, 0.00709, 0.00405), (0.0008660254, 0.00709, 0.00355), (0.0008660254, 0.00709, 0.007914902), (0, 0.00709, 0.007914902)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00709, -0.00405), (0, -0.00709, -0.00555), (0.0008660254, -0.00709, -0.00555), (0.0008660254, -0.00709, -0.00355), (0, 0.00709, -0.00405), (0, 0.00709, -0.00555), (0.0008660254, 0.00709, -0.00555), (0.0008660254, 0.00709, -0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, 0.00659, -0.00355), (0, 0.00709, -0.00355), (0.0008660254, 0.00709, -0.00355), (0.0008660254, 0.00609, -0.00355), (0, 0.00659, 0.00355), (0, 0.00709, 0.00355), (0.0008660254, 0.00709, 0.00355), (0.0008660254, 0.00609, 0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00659, -0.00355), (0.0008660254, -0.00609, -0.00355), (0.0008660254, -0.00709, -0.00355), (0, -0.00709, -0.00355), (0, -0.00659, 0.00355), (0.0008660254, -0.00609, 0.00355), (0.0008660254, -0.00709, 0.00355), (0, -0.00709, 0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Xform "mouth"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+
+        def Xform "seat"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0.016, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+
+        def Xform "catch"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0.0024999999999999988, 0, 0.00355)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+    }
+
+    def Xform "port_2"
+    {
+        quatd xformOp:orient = (0, 1, 0, 0)
+        double3 xformOp:translate = (0, -0.015, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+
+        def Cube "wall_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.001, 0.01346490192107791)
+            double3 xformOp:translate = (0.00843301270189222, 0.00659, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "wall_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.001, 0.01346490192107791)
+            double3 xformOp:translate = (0.00843301270189222, -0.00659, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "wall_bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.01218, 0.002)
+            double3 xformOp:translate = (0.00843301270189222, 0, -0.00455)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "shoulder_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.0038399999999999997, 0.004364901921077908)
+            double3 xformOp:translate = (0.00843301270189222, 0.00417, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "shoulder_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.015133974596215561, 0.0038399999999999997, 0.004364901921077908)
+            double3 xformOp:translate = (0.00843301270189222, -0.00417, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "top_lip" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.00023397459621556007, 0.0045000000000000005, 0.004364901921077908)
+            double3 xformOp:translate = (0.0009830127018922187, 0, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "catch_ledge" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.15, 0.15)]
+            double size = 1
+            double3 xformOp:scale = (0.0014, 0.0045000000000000005, 0.004364901921077908)
+            double3 xformOp:translate = (0.0017999999999999986, 0, 0.005732450960538954)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "pocket_roof" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.013500000000000002, 0.0045000000000000005, 0.002)
+            double3 xformOp:translate = (0.00925, 0, 0.006914901921077909)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "back_stop" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            double size = 1
+            double3 xformOp:scale = (0.0020000000000000018, 0.01418, 0.01346490192107791)
+            double3 xformOp:translate = (0.017, 0, 0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Mesh "lead_in_top" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00709, 0.00405), (0.0008660254, -0.00709, 0.00355), (0.0008660254, -0.00709, 0.007914902), (0, -0.00709, 0.007914902), (0, 0.00709, 0.00405), (0.0008660254, 0.00709, 0.00355), (0.0008660254, 0.00709, 0.007914902), (0, 0.00709, 0.007914902)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00709, -0.00405), (0, -0.00709, -0.00555), (0.0008660254, -0.00709, -0.00555), (0.0008660254, -0.00709, -0.00355), (0, 0.00709, -0.00405), (0, 0.00709, -0.00555), (0.0008660254, 0.00709, -0.00555), (0.0008660254, 0.00709, -0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_left" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, 0.00659, -0.00355), (0, 0.00709, -0.00355), (0.0008660254, 0.00709, -0.00355), (0.0008660254, 0.00609, -0.00355), (0, 0.00659, 0.00355), (0, 0.00709, 0.00355), (0.0008660254, 0.00709, 0.00355), (0.0008660254, 0.00609, 0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Mesh "lead_in_right" (
+            prepend apiSchemas = ["PhysicsCollisionAPI", "PhysicsMeshCollisionAPI"]
+        )
+        {
+            uniform bool doubleSided = 1
+            int[] faceVertexCounts = [4, 4, 4, 4, 4, 4]
+            int[] faceVertexIndices = [0, 3, 2, 1, 4, 5, 6, 7, 0, 1, 5, 4, 1, 2, 6, 5, 2, 3, 7, 6, 3, 0, 4, 7]
+            uniform token physics:approximation = "convexHull"
+            point3f[] points = [(0, -0.00659, -0.00355), (0.0008660254, -0.00609, -0.00355), (0.0008660254, -0.00709, -0.00355), (0, -0.00709, -0.00355), (0, -0.00659, 0.00355), (0.0008660254, -0.00609, 0.00355), (0.0008660254, -0.00709, 0.00355), (0, -0.00709, 0.00355)]
+            color3f[] primvars:displayColor = [(0.3, 0.3, 0.33)]
+            uniform token subdivisionScheme = "none"
+        }
+
+        def Xform "mouth"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+
+        def Xform "seat"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0.016, 0, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+
+        def Xform "catch"
+        {
+            quatd xformOp:orient = (1, 0, 0, 0)
+            double3 xformOp:translate = (0.0024999999999999988, 0, 0.00355)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient"]
+        }
+    }
+
+    def "plate"
+    {
+        def Cube "top" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.55, 0.57, 0.6)]
+            double size = 1
+            double3 xformOp:scale = (0.002, 0.056179999999999994, 0.006000000000000001)
+            double3 xformOp:translate = (0.001, 0, 0.00855)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "bottom" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.55, 0.57, 0.6)]
+            double size = 1
+            double3 xformOp:scale = (0.002, 0.056179999999999994, 0.006)
+            double3 xformOp:translate = (0.001, 0, -0.01091490192107791)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "strip_0" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.55, 0.57, 0.6)]
+            double size = 1
+            double3 xformOp:scale = (0.002, 0.005999999999999998, 0.01346490192107791)
+            double3 xformOp:translate = (0.001, 0.025089999999999998, -0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "strip_1" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.55, 0.57, 0.6)]
+            double size = 1
+            double3 xformOp:scale = (0.002, 0.0008200000000000004, 0.01346490192107791)
+            double3 xformOp:translate = (0.001, 0.0075, -0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "strip_2" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.55, 0.57, 0.6)]
+            double size = 1
+            double3 xformOp:scale = (0.002, 0.0008200000000000004, 0.01346490192107791)
+            double3 xformOp:translate = (0.001, -0.0075, -0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "strip_3" (
+            prepend apiSchemas = ["PhysicsCollisionAPI"]
+        )
+        {
+            color3f[] primvars:displayColor = [(0.55, 0.57, 0.6)]
+            double size = 1
+            double3 xformOp:scale = (0.002, 0.005999999999999998, 0.01346490192107791)
+            double3 xformOp:translate = (0.001, -0.025089999999999998, -0.0011824509605389542)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+}
+
