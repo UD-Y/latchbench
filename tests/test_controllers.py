@@ -165,3 +165,12 @@ def test_open_loop_with_noise_targets_estimate():
     rel = torch.einsum("eij,ei->ej", plant.port_R, ctrl.est_p - plant.port_p)
     meas = torch.einsum("eij,ei->ej", plant.port_R, ctrl.servo.measured_pose(plant.q, TOOL_P, TOOL_R)[0] - plant.port_p)
     assert torch.allclose(meas[:, 1:], rel[:, 1:], atol=2e-4)
+
+
+def test_telemetry_detects_slow_force_ramp():
+    """Soft servo (100 N/m at the tip): the push builds ~1 N/s; a baseline still adapting at contact would hide it."""
+    plant = Plant(2, hole=(0.0012, -0.0008), k=100.0)
+    ctrl = SpiralController(2, cfg=SpiralCfg(sensor="telemetry", pose_noise_mm=0.0))
+    run(ctrl, plant)
+    assert ctrl.contact_detected.all()
+    assert (ctrl.contact_depth.abs() < 1.5e-3).all()

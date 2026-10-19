@@ -49,8 +49,9 @@ class DetectCfg:
 
 
 def telemetry_detect_cfg() -> DetectCfg:
-    # ~90 counts/N on Pitch (hold test press); bus noise +-1 count; free-space motion transients ~10-20 counts.
-    return DetectCfg(contact=35.0, latch_min_rise=20.0, latch_drop=15.0, backstop=350.0, confirm_steps=3, drop_frac=0.0)
+    # ~90 counts/N on Pitch (hold test press); bus noise +-1 count; free-space start-of-motion transients up to
+    # ~35 counts (env run 19 Oct, sw3_loose) -> 50 counts over 4 steps. Not yet calibrated against logged forces.
+    return DetectCfg(contact=50.0, latch_min_rise=20.0, latch_drop=15.0, backstop=350.0, confirm_steps=4, drop_frac=0.0)
 
 
 def oracle_detect_cfg() -> DetectCfg:
@@ -67,9 +68,13 @@ class SpiralCfg(OpenLoopCfg):
     """Per-joint weights of |Present_Load - baseline| (sim order: Rotation, Pitch, Elbow, Wrist_Pitch, Wrist_Roll, Jaw)."""
     baseline_alpha: float = 0.1
     """EMA factor of the free-space load baseline per control step."""
-    baseline_settle_steps: int = 8
+    baseline_depth: float = -0.004
+    """m: the baseline only updates while the measured tip is further than this in front of the estimated mouth. The
+    push builds slowly through the soft servo (~1 N/s), so an EMA still running at contact tracks the rise and never
+    crosses the threshold (env run 19 Oct: 7/20 telemetry episodes slid along the face undetected)."""
+    baseline_settle_steps: int = 15
     """Approach steps before the baseline is trusted (start-of-motion friction transient)."""
-    push_depth: float = 0.004
+    push_depth: float = 0.006
     """m commanded past the contact depth during the search (light push via the servo's position stiffness)."""
     spiral_pitch: float = 0.0003
     """m per turn (CLAUDE.md section 7)."""
@@ -119,6 +124,12 @@ class SpiralController(OpenLoopController):
                   self.gave_up):
             t[ids] = False
 
+    def _integrate_mask(self) -> torch.Tensor:
+        """Open-loop mask, plus the lateral axes during the search (the spiral has to be tracked to ~0.1 mm)."""
+        m = super()._integrate_mask()
+        s = (self.phase == SEARCH).float()
+        return torch.maximum(m, torch.stack([torch.zeros_like(s), s, s], -1))
+
     # ------------------------------------------------------------------------------------------------ sensing
     def _update_signal(self, obs: ControllerObs) -> None:
         cfg: SpiralCfg = self.cfg  # type: ignore[assignment]
@@ -132,7 +143,8 @@ class SpiralController(OpenLoopController):
         first = appr & (self.approach_steps == 0)
         self.baseline = torch.where(first.unsqueeze(-1), load, self.baseline)
         ema = self.baseline + cfg.baseline_alpha * (load - self.baseline)
-        self.baseline = torch.where((appr & ~first).unsqueeze(-1), ema, self.baseline)  # frozen after contact
+        upd = appr & ~first & (self.meas_depth < cfg.baseline_depth)  # frozen before any contact is possible
+        self.baseline = torch.where(upd.unsqueeze(-1), ema, self.baseline)
         sig = ((load - self.baseline).abs() * self.w).sum(-1)
         trusted = (self.approach_steps >= cfg.baseline_settle_steps) | (self.phase > APPROACH)
         self.signal = torch.where(trusted, sig, torch.zeros_like(sig))
@@ -161,7 +173,7 @@ class SpiralController(OpenLoopController):
         self.theta = torch.where(hit, torch.zeros_like(self.theta), self.theta)
         self.search_level = torch.where(hit, self.signal, self.search_level)
         self._goto(hit, SEARCH)
-        miss = m & ~hit & (self.depth >= final)
+        miss = m & ~hit & self._ramp_done(final)
         self.no_contact |= miss
         self._goto(miss, HOLD)
 
@@ -209,4 +221,7 @@ class SpiralController(OpenLoopController):
         self._goto(jam, SEARCH)
         self._goto(m & ~jam & (snap | hard | (self.depth >= final)), HOLD)
 
+        # HOLD keeps ramping to the final depth (bounded by the push lead), so an early or false snap cannot stall.
+        m = self.phase >= HOLD
+        self.depth = torch.where(m, torch.minimum(self.depth + cfg.approach_speed * cfg.dt, final), self.depth)
         self._goto((self.phase == HOLD) & (self.t_phase >= cfg.hold_s) & (ph == HOLD), DONE)

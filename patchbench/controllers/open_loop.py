@@ -63,12 +63,30 @@ class OpenLoopCfg:
     settle_s: float = 0.6
     """s at the pre-insert pose (sag integral running) before the approach ..."""
     settle_tol: float = 0.0004
-    """... once the measured tip is within this distance of the target [m] (or after 3x settle_s)."""
+    """... once the measured tip is within this distance of the target [m] (or after ``settle_timeout_s``)."""
     approach_speed: float = 0.010
     """m/s along the insertion axis (CLAUDE.md section 7)."""
-    push_past_seat: float = 0.003
-    """m beyond the seat depth for the final commanded depth (CLAUDE.md section 7: seat depth + 3 mm)."""
+    push_past_seat: float = 0.010
+    """m beyond the seat depth for the final commanded depth. CLAUDE.md section 7 says 3 mm, but at LeRobot's P=16
+    the servo gives only ~0.1 N per mm of commanded overshoot at the plug tip (env run 19 Oct: 5.4 mm -> 0.6 N), below
+    the medium/spec latch peaks (1.4 / 2.5 N); the push is bounded by ``push_lead`` instead."""
+    push_lead: float = 0.010
+    """m, the commanded depth never leads the measured depth by more than this (bounded push force ~ servo stiffness
+    x lead, no wind-up against the back stop). Same for every controller."""
+    comply_depth: float = 0.003
+    """m past the estimated mouth: beyond it the plug is in the jack and the lateral command follows the measured
+    position (encoder-only lateral compliance, so the arm does not wedge the plug against the jack walls)."""
     hold_s: float = 1.0
+    free_space_depth: float = -0.001
+    """m, measured depth relative to the estimated mouth at which the sag integral stops (plug about to enter)."""
+    entry_tol: float = 0.0003
+    """m, lateral tracking error allowed at the entry gate (joint encoders vs the estimated axis) ..."""
+    entry_gap: float = 0.002
+    """... the approach pauses this far in front of the estimated mouth until the error is below ``entry_tol`` ..."""
+    entry_timeout_s: float = 3.0
+    """... or for at most this long (a 1 mm miss at the face makes the soft arm slide 10 mm along it, env run)."""
+    settle_timeout_s: float = 3.0
+    """s, leave the settle even if the tolerance is not met."""
     servo: ServoCfg = field(default_factory=ServoCfg)
 
 
@@ -94,12 +112,15 @@ class OpenLoopController:
         self.jaw_goal = torch.zeros(E, device=dev)
         self.meas_depth = torch.zeros(E, device=dev)  # measured tip depth along the estimated axis [m]
         self.meas_lat = torch.zeros(E, 2, device=dev)
+        self.gate_t = torch.zeros(E, device=dev)
 
     # ---------------------------------------------------------------------------------------------- lifecycle
     def reset(self, env_ids: torch.Tensor | None = None) -> None:
         """Mark envs for re-initialisation from their next observation."""
-        ids = self._ids(env_ids)
-        self.phase[ids] = INIT
+        mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        mask[self._ids(env_ids)] = True
+        # Not in place: Arena's runner calls reset() outside the inference_mode its get_action() runs in.
+        self.phase = torch.where(mask, torch.full_like(self.phase, INIT), self.phase)
 
     def _ids(self, env_ids) -> torch.Tensor:
         if env_ids is None:
@@ -124,6 +145,7 @@ class OpenLoopController:
         self.lat[ids] = 0.0
         self.jaw_goal[ids] = obs.joint_pos[ids, 5]
         self.t_phase[ids] = 0.0
+        self.gate_t[ids] = 0.0
         self.phase[ids] = TO_STANDOFF
         self._init_extra(ids)
 
@@ -160,10 +182,22 @@ class OpenLoopController:
         m = (ph == TO_STANDOFF) & (self.t_phase >= self.move_T)
         self._goto(m, TO_PRE)
         err = (p_meas - self._port_target()).norm(dim=-1)
-        m = (ph == SETTLE) & (((self.t_phase >= cfg.settle_s) & (err < cfg.settle_tol)) | (self.t_phase >= 3 * cfg.settle_s))
+        m = (ph == SETTLE) & (((self.t_phase >= cfg.settle_s) & (err < cfg.settle_tol)) | (self.t_phase >= cfg.settle_timeout_s))
         self._goto(m, APPROACH)
 
+        depth_before = self.depth
         self._step_contact_phases(obs)
+        # Entry gate (all controllers, encoders only): hold the approach just before the mouth until aligned.
+        lat_err = (self.meas_lat - self.lat).norm(dim=-1)
+        at_gate = (self.phase == APPROACH) & (self.depth > -cfg.entry_gap) & (self.meas_depth < -cfg.entry_gap)
+        wait = at_gate & (lat_err > cfg.entry_tol) & (self.gate_t < cfg.entry_timeout_s)
+        self.gate_t = self.gate_t + wait.float() * cfg.dt
+        self.depth = torch.where(wait, torch.minimum(depth_before, torch.full_like(self.depth, -cfg.entry_gap)), self.depth)
+        self.t_phase = torch.where(wait, self.t_phase - cfg.dt, self.t_phase)  # the ramp clock pauses too
+        pushing = (self.phase == APPROACH) | (self.phase == INSERT) | (self.phase >= HOLD)
+        self.depth = torch.where(pushing, torch.minimum(self.depth, self.meas_depth + cfg.push_lead), self.depth)
+        comply = pushing & (self.meas_depth > cfg.comply_depth)
+        self.lat = torch.where(comply.unsqueeze(-1), self.meas_lat, self.lat)
 
         # target pose
         tgt_p, tgt_R = self._port_target(), self.est_R
@@ -174,9 +208,22 @@ class OpenLoopController:
             R_lin = self.start_R @ rot_exp(s * rot_log(self.start_R.transpose(-1, -2) @ self.est_R))
             tgt_p = torch.where(mv.unsqueeze(-1), p_lin, tgt_p)
             tgt_R = torch.where(mv.view(-1, 1, 1), R_lin, tgt_R)
-        integrate = self.phase <= SETTLE
+        integrate = self._integrate_mask()
         arm = self.servo.step(tgt_p, tgt_R, obs.joint_pos, obs.tool_p, obs.tool_R, integrate)
         return torch.cat([arm, self.jaw_goal.unsqueeze(-1)], dim=-1)
+
+    def _integrate_mask(self) -> torch.Tensor:
+        """(E, 3) sag-integral mask over (insertion, width, height): every axis in free space, i.e. up to the settle
+        and during the approach until the measured tip reaches ``free_space_depth`` (joint encoders only, so the
+        open-loop controller stays force-blind). The axial integral is needed in the approach too: with the
+        ``physx_joint`` gearbox friction a stopped joint does not restart for a 10 mm commanded lead (env run 19 Oct).
+        """
+        free = (self.phase <= SETTLE) | ((self.phase == APPROACH) & (self.meas_depth < self.cfg.free_space_depth))
+        return free.unsqueeze(-1).float().expand(-1, 3)
+
+    def _ramp_done(self, final: torch.Tensor) -> torch.Tensor:
+        """The approach ramp (pre-insert -> final at approach_speed) has run its course, blocked or not."""
+        return (self.depth >= final) | (self.t_phase >= (final + self.cfg.pre_insert) / self.cfg.approach_speed)
 
     def _step_contact_phases(self, obs: ControllerObs) -> None:
         """Open loop: approach and push to seat + 3 mm, hold, done."""
@@ -185,5 +232,5 @@ class OpenLoopController:
         final = seat + cfg.push_past_seat
         m = self.phase == APPROACH
         self.depth = torch.where(m, torch.minimum(self.depth + cfg.approach_speed * cfg.dt, final), self.depth)
-        self._goto(m & (self.depth >= final), HOLD)
+        self._goto(m & self._ramp_done(final), HOLD)
         self._goto((self.phase == HOLD) & (self.t_phase >= cfg.hold_s), DONE)

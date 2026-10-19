@@ -96,3 +96,19 @@ def test_servo_sag_integral_removes_constant_droop():
         q_meas = torch.cat([goal + sag, torch.zeros(1, 1)], -1)
     p, _, _, _ = kin.forward(q_meas[:, :5])
     assert (p - p_t).norm() < 2e-4
+
+
+def test_servo_tilt_integral_removes_wrist_droop():
+    """Plant: Wrist_Pitch sags 2 deg below its goal; the orientation integral cancels the tilt."""
+    kin = SO101Kinematics()
+    servo = CartesianServo(1)
+    p_t, R_t, _, _ = kin.forward(HOME.float())
+    sag = torch.tensor([[0.0, 0.0, 0.0, math.radians(2.0), 0.0]])
+    q_meas = torch.cat([HOME.float(), torch.zeros(1, 1)], -1)
+    servo.reset(torch.tensor([0]), q_meas)
+    for _ in range(200):
+        goal = servo.step(p_t, R_t, q_meas, torch.zeros(3), torch.eye(3), torch.tensor([True]))
+        q_meas = torch.cat([goal + sag, torch.zeros(1, 1)], -1)
+    p, R, _, _ = kin.forward(q_meas[:, :5])
+    assert (p - p_t).norm() < 2e-4
+    assert rot_log(R_t @ R.transpose(-1, -2)).norm() < math.radians(0.2)

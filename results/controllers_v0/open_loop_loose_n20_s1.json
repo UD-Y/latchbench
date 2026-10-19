@@ -1,0 +1,458 @@
+{
+ "policy": "open_loop",
+ "tier": "loose",
+ "n": 20,
+ "pose_noise_mm": 1.0,
+ "num_envs": 8,
+ "funnel": {
+  "reached": 1.0,
+  "contacted": 1.0,
+  "aligned": 0.55,
+  "seated": 0.55,
+  "latched": 0.55
+ },
+ "success": 0.550000011920929,
+ "wall_s": 134.1,
+ "episodes": [
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.42495834827423096,
+   "time_to_latch": 5.033333778381348,
+   "overload_events": 0,
+   "env_id": 4,
+   "target_port": 2,
+   "steps": 150,
+   "phase": "approach",
+   "meas_depth_mm": 16.060614958405495,
+   "meas_lat_mm": [
+    0.6192881464958191,
+    -0.6067473292350769
+   ],
+   "noise_mm": [
+    0.16645535826683044,
+    0.8743818402290344,
+    -0.14347384870052338
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.43655332922935486,
+   "time_to_latch": 5.133333683013916,
+   "overload_events": 0,
+   "env_id": 5,
+   "target_port": 0,
+   "steps": 153,
+   "phase": "approach",
+   "meas_depth_mm": 16.285397112369537,
+   "meas_lat_mm": [
+    0.3281378149986267,
+    0.8569585680961609
+   ],
+   "noise_mm": [
+    -0.11160933971405029,
+    0.931826651096344,
+    1.2590093612670898
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.3985420763492584,
+   "time_to_latch": 5.366666793823242,
+   "overload_events": 0,
+   "env_id": 3,
+   "target_port": 0,
+   "steps": 160,
+   "phase": "approach",
+   "meas_depth_mm": 16.551019623875618,
+   "meas_lat_mm": [
+    0.3788018524646759,
+    -0.20243807137012482
+   ],
+   "noise_mm": [
+    -0.1577124446630478,
+    1.4436602592468262,
+    0.26604944467544556
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 1.0380157232284546,
+   "time_to_latch": 5.133333683013916,
+   "overload_events": 0,
+   "env_id": 5,
+   "target_port": 0,
+   "steps": 153,
+   "phase": "approach",
+   "meas_depth_mm": 15.304544940590858,
+   "meas_lat_mm": [
+    0.8523542284965515,
+    0.8635351657867432
+   ],
+   "noise_mm": [
+    0.7748488783836365,
+    0.19186943769454956,
+    1.2637947797775269
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.41753530502319336,
+   "time_to_latch": 5.366666793823242,
+   "overload_events": 0,
+   "env_id": 4,
+   "target_port": 2,
+   "steps": 160,
+   "phase": "approach",
+   "meas_depth_mm": 16.822103410959244,
+   "meas_lat_mm": [
+    0.8471025824546814,
+    0.5464814901351929
+   ],
+   "noise_mm": [
+    0.3703935742378235,
+    1.4565025568008423,
+    0.9398099780082703
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 2.304518461227417,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 0,
+   "target_port": 1,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": -1.2261427473276854,
+   "meas_lat_mm": [
+    -0.4090323746204376,
+    7.9432053565979
+   ],
+   "noise_mm": [
+    -1.1258398294448853,
+    -1.152360200881958,
+    -0.2505785822868347
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 4.12301778793335,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 1,
+   "target_port": 2,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": 1.1639988515526056,
+   "meas_lat_mm": [
+    -0.4048950970172882,
+    1.5807831287384033
+   ],
+   "noise_mm": [
+    -0.4338788390159607,
+    0.8487104177474976,
+    0.6920091509819031
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 1.7225277423858643,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 2,
+   "target_port": 0,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": -2.143841702491045,
+   "meas_lat_mm": [
+    -1.3768771886825562,
+    10.635270118713379
+   ],
+   "noise_mm": [
+    -0.31601279973983765,
+    -2.1152193546295166,
+    0.46809643507003784
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 1.6639288663864136,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 6,
+   "target_port": 1,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": -0.11891371104866266,
+   "meas_lat_mm": [
+    -1.058820128440857,
+    8.196810722351074
+   ],
+   "noise_mm": [
+    2.0049805641174316,
+    0.05373690649867058,
+    0.6180567145347595
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 2.4591968059539795,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 7,
+   "target_port": 0,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": -0.9726480348035693,
+   "meas_lat_mm": [
+    -1.1815284490585327,
+    10.803589820861816
+   ],
+   "noise_mm": [
+    -0.41280224919319153,
+    -0.8410648703575134,
+    -2.316042184829712
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 6.5409674644470215,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 3,
+   "target_port": 0,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": -0.945095089264214,
+   "meas_lat_mm": [
+    -0.2917712330818176,
+    8.144350051879883
+   ],
+   "noise_mm": [
+    -1.2904350757598877,
+    -0.7911027669906616,
+    -0.0208794753998518
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.5488525032997131,
+   "time_to_latch": 5.366666793823242,
+   "overload_events": 0,
+   "env_id": 7,
+   "target_port": 2,
+   "steps": 160,
+   "phase": "approach",
+   "meas_depth_mm": 17.383530735969543,
+   "meas_lat_mm": [
+    0.009773707017302513,
+    -0.46557384729385376
+   ],
+   "noise_mm": [
+    -0.21902282536029816,
+    2.057591199874878,
+    -0.03542188182473183
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.46822068095207214,
+   "time_to_latch": 5.466667175292969,
+   "overload_events": 0,
+   "env_id": 1,
+   "target_port": 0,
+   "steps": 163,
+   "phase": "approach",
+   "meas_depth_mm": 14.448245987296104,
+   "meas_lat_mm": [
+    0.7444607615470886,
+    -0.45243778824806213
+   ],
+   "noise_mm": [
+    0.2733677327632904,
+    -0.9181000590324402,
+    -0.04042108729481697
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 5.007168769836426,
+   "time_to_latch": 5.500000476837158,
+   "overload_events": 0,
+   "env_id": 0,
+   "target_port": 1,
+   "steps": 164,
+   "phase": "approach",
+   "meas_depth_mm": 14.116263948380947,
+   "meas_lat_mm": [
+    0.7218144536018372,
+    -0.9694658517837524
+   ],
+   "noise_mm": [
+    0.2589845359325409,
+    -1.0297023057937622,
+    -0.5007584095001221
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 0.9430676698684692,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 5,
+   "target_port": 0,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": 0.34662761026993394,
+   "meas_lat_mm": [
+    -0.8907541036605835,
+    14.303601264953613
+   ],
+   "noise_mm": [
+    -0.718480110168457,
+    0.5186367630958557,
+    -1.3125219345092773
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 1.7412331104278564,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 4,
+   "target_port": 2,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": 0.20086771110072732,
+   "meas_lat_mm": [
+    -1.4407126903533936,
+    12.764578819274902
+   ],
+   "noise_mm": [
+    0.1919950693845749,
+    0.5427713394165039,
+    -2.2187793254852295
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.46333616971969604,
+   "time_to_latch": 5.133333683013916,
+   "overload_events": 0,
+   "env_id": 0,
+   "target_port": 1,
+   "steps": 153,
+   "phase": "approach",
+   "meas_depth_mm": 14.815091155469418,
+   "meas_lat_mm": [
+    0.5391995310783386,
+    -0.6097710728645325
+   ],
+   "noise_mm": [
+    0.037114307284355164,
+    -0.28490933775901794,
+    -0.1334417462348938
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.3678460121154785,
+   "time_to_latch": 5.366666793823242,
+   "overload_events": 0,
+   "env_id": 3,
+   "target_port": 2,
+   "steps": 160,
+   "phase": "approach",
+   "meas_depth_mm": 14.401606284081936,
+   "meas_lat_mm": [
+    -0.008096044883131981,
+    0.5857513546943665
+   ],
+   "noise_mm": [
+    0.06271883100271225,
+    -0.7663062810897827,
+    1.0992506742477417
+   ]
+  },
+  {
+   "furthest_stage": 5,
+   "success": true,
+   "wrong_port": false,
+   "peak_axial_force": 0.4636317491531372,
+   "time_to_latch": 5.400000095367432,
+   "overload_events": 0,
+   "env_id": 4,
+   "target_port": 2,
+   "steps": 161,
+   "phase": "approach",
+   "meas_depth_mm": 13.866688124835491,
+   "meas_lat_mm": [
+    0.19085150957107544,
+    0.9071595072746277
+   ],
+   "noise_mm": [
+    -0.3359881043434143,
+    -1.5699862241744995,
+    1.2315003871917725
+   ]
+  },
+  {
+   "furthest_stage": 2,
+   "success": false,
+   "wrong_port": false,
+   "peak_axial_force": 6.542113304138184,
+   "time_to_latch": NaN,
+   "overload_events": 0,
+   "env_id": 2,
+   "target_port": 1,
+   "steps": 599,
+   "phase": "done",
+   "meas_depth_mm": 0.9465019102208316,
+   "meas_lat_mm": [
+    0.11872821301221848,
+    -0.4289948642253876
+   ],
+   "noise_mm": [
+    0.28811684250831604,
+    -0.007537308614701033,
+    -0.9144954681396484
+   ]
+  }
+ ]
+}

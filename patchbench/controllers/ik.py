@@ -240,11 +240,16 @@ def solve_ik(
 @dataclass
 class ServoCfg:
     ik: IKCfg = None  # type: ignore[assignment]
-    sag_gain: float = 4.0
+    sag_gain: float = 10.0
     """1/s, task-space integral on the measured position error (free space only): removes the servo's gravity sag
     (hold test: Pitch 0.6 deg, Elbow 1.1 deg at P=16 -> mm at the plug tip)."""
-    sag_limit: float = 0.010
+    sag_limit: float = 0.020
     """m, clamp on the integral offset."""
+    tilt_gain: float = 10.0
+    """1/s, the same integral on the measured orientation error (sag also tilts the plug: 3.7 deg measured in the
+    env with position-only compensation, enough to jam a loose jack at 11 mm)."""
+    tilt_limit: float = 0.2
+    """rad, clamp on the orientation integral."""
 
     def __post_init__(self):
         if self.ik is None:
@@ -260,10 +265,12 @@ class CartesianServo:
         self.dt = dt
         self.goal = torch.zeros(num_envs, 5, device=self.kin.device)
         self.offset = torch.zeros(num_envs, 3, device=self.kin.device)
+        self.rot_offset = torch.zeros(num_envs, 3, device=self.kin.device)
 
     def reset(self, env_ids: torch.Tensor, q_meas: torch.Tensor) -> None:
         self.goal[env_ids] = q_meas[env_ids, :5]
         self.offset[env_ids] = 0.0
+        self.rot_offset[env_ids] = 0.0
 
     def measured_pose(self, q_meas: torch.Tensor, tool_p, tool_R) -> tuple[torch.Tensor, torch.Tensor]:
         p, R, _, _ = self.kin.forward(q_meas[:, :5], tool_p, tool_R)
@@ -278,11 +285,26 @@ class CartesianServo:
         tool_R: torch.Tensor,
         integrate: torch.Tensor,
     ) -> torch.Tensor:
-        """Arm joint goals ``(E, 5)``. ``integrate``: ``(E,)`` bool, update the sag integral (free space)."""
-        p_meas, _ = self.measured_pose(q_meas, tool_p, tool_R)
-        upd = self.offset + self.cfg.sag_gain * self.dt * (target_p - p_meas)
+        """Arm joint goals ``(E, 5)``.
+
+        ``integrate``: ``(E,)`` bool (all axes) or ``(E, 3)`` float/bool mask over the axes of ``target_R`` (e.g. the
+        port frame: insertion, width, height), selecting which error components feed the sag integral.
+        """
+        p_meas, R_meas = self.measured_pose(q_meas, tool_p, tool_R)
+        err = target_p - p_meas
+        on = integrate.any(-1) if integrate.dim() == 2 else integrate
+        rupd = self.rot_offset + self.cfg.tilt_gain * self.dt * rot_log(target_R @ R_meas.transpose(-1, -2))
+        rn = rupd.norm(dim=-1, keepdim=True)
+        rupd = rupd * (self.cfg.tilt_limit / rn.clamp(min=self.cfg.tilt_limit))
+        self.rot_offset = torch.where(on.unsqueeze(-1), rupd, self.rot_offset)
+        if integrate.dim() == 2:
+            local = torch.einsum("eji,ej->ei", target_R, err) * integrate.to(err.dtype)
+            err = torch.einsum("eij,ej->ei", target_R, local)
+            integrate = integrate.any(-1)
+        upd = self.offset + self.cfg.sag_gain * self.dt * err
         n = upd.norm(dim=-1, keepdim=True)
         upd = upd * (self.cfg.sag_limit / n.clamp(min=self.cfg.sag_limit))
         self.offset = torch.where(integrate.unsqueeze(-1), upd, self.offset)
-        self.goal = solve_ik(self.kin, self.goal, target_p + self.offset, target_R, tool_p, tool_R, self.cfg.ik)
+        R_cmd = rot_exp(self.rot_offset) @ target_R
+        self.goal = solve_ik(self.kin, self.goal, target_p + self.offset, R_cmd, tool_p, tool_R, self.cfg.ik)
         return self.goal
