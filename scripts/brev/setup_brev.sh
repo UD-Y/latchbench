@@ -108,10 +108,11 @@ else
 fi
 
 step "editable installs into the Arena venv (always redone: uv sync removes them)"
+# pyzmq: the sim-side client of patchbench/policy_server.py (ZMQ policy server for --policy lerobot).
 uv pip install --python "$ARENA/.venv/bin/python" -q \
-  -e "$SO101" -e "$WORK/so101-contact" -e "$WORK/patchbench" pytest
+  -e "$SO101" -e "$WORK/so101-contact" -e "$WORK/patchbench" pytest pyzmq
 "$ARENA/.venv/bin/python" -c \
-  "import isaaclab_so101, so101_contact, patchbench; print('isaaclab_so101, so101_contact', so101_contact.__version__, ', patchbench OK')"
+  "import isaaclab_so101, so101_contact, patchbench, zmq; print('isaaclab_so101, so101_contact', so101_contact.__version__, ', patchbench OK, pyzmq', zmq.__version__)"
 
 step "LeRobot venv ($LEROBOT_SPEC) at $LEROBOT_VENV"
 if ! "$LEROBOT_VENV/bin/python" -c "import importlib.metadata as m, sys; sys.exit(m.version('lerobot') != '0.6.1')" 2>/dev/null; then
@@ -120,7 +121,9 @@ if ! "$LEROBOT_VENV/bin/python" -c "import importlib.metadata as m, sys; sys.exi
 fi
 # patchbench's raw-format module is numpy-only; the converter imports it from the repo path.
 uv pip install --python "$LEROBOT_VENV/bin/python" -q --no-deps -e "$WORK/patchbench"
-"$LEROBOT_VENV/bin/python" -c "import lerobot, importlib.metadata as m; print('lerobot', m.version('lerobot'))"
+# pyzmq: patchbench/policy_server.py serves LeRobot policies to the sim from this venv.
+uv pip install --python "$LEROBOT_VENV/bin/python" -q pyzmq
+"$LEROBOT_VENV/bin/python" -c "import lerobot, zmq, importlib.metadata as m; print('lerobot', m.version('lerobot'), 'pyzmq', zmq.__version__)"
 "$LEROBOT_VENV/bin/python" -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
 
 step "Hugging Face login"
