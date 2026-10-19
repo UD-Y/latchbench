@@ -19,6 +19,7 @@
 # Knobs (environment variables; defaults in brackets):
 #   EPISODES_PER_PORT [150]  DATAGEN_TIERS [loose,medium]  DATAGEN_NUM_ENVS [8]  IMG_H/IMG_W [480/640]
 #   SWEEP_N [200]  SWEEP_TIERS [loose,medium,spec]  SWEEP_NUM_ENVS [64]  SWEEP_POSE_NOISE_MM [1]
+#   EXPERT_CONTROLLER [policy default: open_loop | oracle_spiral | telemetry_spiral]
 #   GROOT_STEPS [6000]  GROOT_BATCH [32]  NO_POWEROFF [0]  SKIP_STAGES (e.g. "1,4")  VCODEC [libsvtav1]
 # Time-estimate inputs (measure them on the L40S: gen_data prints env-frames/s, to_lerobot prints frames/s):
 #   DATAGEN_FPS [60, placeholder]  EP_SECONDS [10]  DATAGEN_SUCCESS [0.8]  ENCODE_FPS [60, placeholder]
@@ -29,7 +30,7 @@ DRY_RUN=false
 for arg in "$@"; do
   case "$arg" in
     --dry-run) DRY_RUN=true ;;
-    -h|--help) sed -n '2,29p' "$0" | sed 's/^# \?//'; exit 0 ;;
+    -h|--help) awk 'NR > 1 && !/^#/ {exit} NR > 1 {sub(/^# ?/, ""); print}' "$0"; exit 0 ;;
     *) echo "chain_overnight.sh: unknown option $arg (try --help)" >&2; exit 2 ;;
   esac
 done
@@ -117,7 +118,7 @@ chain_overnight.sh plan ($(hostname), $(date '+%a %d %b %H:%M'))
   poweroff      $([[ "$NO_POWEROFF" == 1 ]] && echo "no (NO_POWEROFF=1)" || echo "yes, at the end")
   skip stages   ${SKIP_STAGES:-none}
 Stages:
-  1 gen_data    tiers $DATAGEN_TIERS, $EPISODES_PER_PORT latched eps/port, num_envs $DATAGEN_NUM_ENVS, ${IMG_H}x${IMG_W}, cameras on  $(stage_status 1)
+  1 gen_data    expert ${EXPERT_CONTROLLER:-default}, tiers $DATAGEN_TIERS, $EPISODES_PER_PORT latched eps/port, num_envs $DATAGEN_NUM_ENVS, ${IMG_H}x${IMG_W}, cameras on  $(stage_status 1)
   2 to_lerobot  $VCODEC, push to $DATASET_REPO (background)  $(stage_status 2)
   3 sweeps      ${SWEEP_POLICIES[*]} on $SWEEP_TIERS, n=$SWEEP_N, num_envs $SWEEP_NUM_ENVS, pose noise ${SWEEP_POSE_NOISE_MM} mm, state-only  $(stage_status 3)
   4 groot       GR00T N1.7, $GROOT_STEPS steps, batch $GROOT_BATCH, push to $MODEL_REPO  $(stage_status 4)
@@ -210,7 +211,7 @@ stage_gen_data() {
   cd "$PB"
   flock "$ISAAC_LOCK" "$ARENA_PY" scripts/gen_data.py --tiers "$DATAGEN_TIERS" \
     --episodes_per_port "$EPISODES_PER_PORT" --num_envs "$DATAGEN_NUM_ENVS" --height "$IMG_H" --width "$IMG_W" \
-    --out "$RAW" -- --pose_noise_mm 0
+    --out "$RAW" ${EXPERT_CONTROLLER:+--expert_controller "$EXPERT_CONTROLLER"}  # expert pose_noise_mm defaults to 0
 }
 
 stage_to_lerobot() {

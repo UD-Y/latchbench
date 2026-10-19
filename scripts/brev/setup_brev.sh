@@ -35,7 +35,7 @@ for arg in "$@"; do
   case "$arg" in
     --force-sync) FORCE_SYNC=true ;;
     --skip-tests) SKIP_TESTS=true ;;
-    -h|--help) sed -n '2,22p' "$0" | sed 's/^# \?//'; exit 0 ;;
+    -h|--help) awk 'NR > 1 && !/^#/ {exit} NR > 1 {sub(/^# ?/, ""); print}' "$0"; exit 0 ;;
     *) echo "setup_brev.sh: unknown option $arg (try --help)" >&2; exit 2 ;;
   esac
 done

@@ -67,7 +67,7 @@ Both files are uploaded with the dataset.
 # laptop pilot (Arena venv, cameras on, 1 env, 240x320, one Isaac process at a time)
 cd ~/work/patchbench
 flock ~/work/.isaac.lock ~/work/IsaacLab-Arena/.venv/bin/python scripts/gen_data.py \
-  --tiers loose --episodes_per_port 1 --num_envs 1 --height 240 --width 320 --out ~/data/raw/pilot -- --pose_noise_mm 0
+  --tiers loose --episodes_per_port 1 --num_envs 1 --height 240 --width 320 --out ~/data/raw/pilot
 ~/work/.venv-lerobot/bin/python scripts/to_lerobot.py --raw ~/data/raw/pilot --repo_id local/patchbench-pilot
 # tests
 ~/work/IsaacLab-Arena/.venv/bin/python -m pytest -q tests/test_raw_format.py
