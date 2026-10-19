@@ -51,12 +51,15 @@ PHYSX_SCENE = dict(
 CONTACT_SENSOR = dict(track_friction_forces=True, max_contact_data_count_per_prim=64)
 """Plug-jack force = normal + friction; friction is ~0 with the default 4 contact slots (docs/ENV_AUDIT.md 10)."""
 
-SERVO_FRICTION_MODE = "physx_joint"
+SERVO_FRICTION_MODE = "explicit"
 """STS3215 gearbox friction mode for the RJ45 env (so101_contact ``friction_mode``).
 
-``physx_joint`` writes BAM's Coulomb budget to PhysX joint friction every physics step, so a joint that is not
-moving holds small contact torques in stiction, as the real gearbox does (results/hold_test_physx_joint: elbow
-Present_Load flat until ~2 N). Decision 19 Oct: default ``physx_joint``; fall back to ``explicit`` if the per-step
-CPU friction write is too slow at 16 envs. Measured 19 Oct (scripts/bench_friction_mode.py, 16 SO-101s, laptop):
-222 physics steps/s vs 251 for ``explicit`` (-12 %), both ~real time -> keep ``physx_joint``.
+``explicit`` (all friction in the actuator torque, smooth tanh, no stiction). Switched from ``physx_joint`` on
+19 Oct ~21:30: in ``physx_joint`` the actuator's external-torque estimate ``M*qdd - tau`` also contains PhysX's own
+friction reaction, so a stuck joint's load-dependent budget grows with the command and the joint never restarts
+(BAM subtracts its own friction; we cannot read it from PhysX). P6 expert on loose, 20 episodes, sigma 0:
+explicit 16/20 latched (G2 passes), physx_joint 7/20. ``physx_joint`` stays available (env flag
+--servo_friction_mode) until the estimate is fixed in so101-contact. Earlier physx_joint results (hold_test_physx_joint:
+elbow Present_Load flat until ~2 N) are affected by the same feedback and overstate stiction.
+Cost at 16 envs (dt 1/240): explicit 251 vs physx_joint 222 physics steps/s (scripts/bench_friction_mode.py).
 """
