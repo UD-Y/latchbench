@@ -29,6 +29,7 @@ flock ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers l
 | `--pose_noise_mm` | 1.0 (expert 0.0) | σ of the port-pose estimate given to scripted controllers: passed to the policy cfg (`pose_noise_mm`) if it has that field, else to the env as `--port_est_noise_mm` (never both) |
 | `--port` | `random` | target port `0,1,2` or `random` |
 | `--out` | `results/` | output root |
+| `--policy_arg` | | extra policy cfg flag, repeatable, e.g. `--policy_arg=--expert_controller=oracle_spiral`, `--policy_arg=--contact_threshold=40` |
 | `--dry_run` | | print the per-tier worker configs and Arena argv, start nothing |
 
 Each tier runs in its own Isaac Sim process (one tier = one panel USD), sequentially. The worker uses Arena's own

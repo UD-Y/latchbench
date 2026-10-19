@@ -61,6 +61,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--dry_run", action="store_true")
     ap.add_argument("--env_arg", action="append", default=[],
                     help="extra env flag passed after the env name, e.g. --env_arg=--foo=1 (repeatable)")
+    ap.add_argument("--policy_arg", action="append", default=[],
+                    help="extra policy cfg flag, e.g. --policy_arg=--expert_controller=oracle_spiral (repeatable)")
     ap.add_argument("--_worker", default=None, help=argparse.SUPPRESS)
     # debug: run the worker machinery on another Arena env / registered policy (no StageTracker results)
     ap.add_argument("--_env", default=None, help=argparse.SUPPRESS)
@@ -102,6 +104,7 @@ def worker_config(args: argparse.Namespace, tier: str) -> dict:
         "endpoint": args.endpoint,
         "n_action_steps": args.n_action_steps,
         "env_args": list(args.env_arg),
+        "policy_args": list(args.policy_arg),
         "env_name": args._env,
         "arena_policy": args._arena_policy,
         "jsonl": str(d / f"{tier}.jsonl"),
@@ -265,7 +268,7 @@ def worker(cfg: dict) -> None:
             for f in POLICY_SEED_FIELDS:
                 if f in fields:
                     policy_flags += [f"--{f}", str(cfg["seed"])]
-            policy_flags = ["--policy_type", policy_type, *policy_flags]
+            policy_flags = ["--policy_type", policy_type, *policy_flags, *cfg.get("policy_args", [])]
 
         policy_adds_noise = "--pose_noise_mm" in policy_flags
         sys.argv = [sys.argv[0], *base, *policy_flags, *arena_env_argv(cfg, policy_adds_noise)]
