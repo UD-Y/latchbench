@@ -161,3 +161,8 @@ Read from `isaaclab/actuators/actuator_collection.py` and `isaaclab/actuators/ac
 - `simulation_app.close()` in a `finally` hides exceptions raised before it: print the traceback first.
 
 Hold test (`scripts/hold_test.py`, 1 env, no cameras, 30 s wall, 4.2 GB RSS): see `results/hold_test*/summary.json`.
+
+Friction-mode cost at 16 envs (`scripts/bench_friction_mode.py`, 16 SO-101s on STS3215 actuators, random goals,
+dt 1/240, laptop RTX 4060, no cameras): `explicit` 251 physics steps/s (4022 env-steps/s, 6.5 GB RSS),
+`physx_joint` 222 physics steps/s (3547 env-steps/s, 5.0 GB RSS), i.e. −12 %. `physx_joint` is the env default
+(`patchbench/physics.py`). Re-measure at 64–256 envs on Brev, where the per-step CPU copy grows with num_envs.

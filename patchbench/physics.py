@@ -6,5 +6,6 @@ SERVO_FRICTION_MODE = "physx_joint"
 ``physx_joint`` writes BAM's Coulomb budget to PhysX joint friction every physics step, so a joint that is not
 moving holds small contact torques in stiction, as the real gearbox does (results/hold_test_physx_joint: elbow
 Present_Load flat until ~2 N). Decision 19 Oct: default ``physx_joint``; fall back to ``explicit`` if the per-step
-CPU friction write is too slow at 16 envs (measured in P5, see docs/ENV_AUDIT.md section 9).
+CPU friction write is too slow at 16 envs. Measured 19 Oct (scripts/bench_friction_mode.py, 16 SO-101s, laptop):
+222 physics steps/s vs 251 for ``explicit`` (-12 %), both ~real time -> keep ``physx_joint``.
 """
