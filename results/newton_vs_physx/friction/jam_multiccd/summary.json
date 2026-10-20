@@ -1,0 +1,152 @@
+{
+ "run_id": "jam_multiccd",
+ "config": {
+  "engine": "newton",
+  "newton": "1.5.0",
+  "warp": "1.16.0",
+  "solver": "SolverMuJoCo",
+  "dt": 0.0020833333333333333,
+  "substeps": 8,
+  "solref": [
+   0.0005208333333333333,
+   1.0
+  ],
+  "solimp": [
+   0.99,
+   0.999,
+   0.0002,
+   0.5,
+   2.0
+  ],
+  "iterations": 100,
+  "ls_iterations": 50,
+  "cone": "elliptic",
+  "impratio": 1.0,
+  "condim": 3,
+  "multiccd": true,
+  "latch_armature": 0.0,
+  "friction": 0.35,
+  "cuda_graph": true
+ },
+ "num_envs": 2,
+ "seeds": 2,
+ "sim_steps_per_s": 340.0792204278639,
+ "explosions": 0,
+ "tunnels": 0,
+ "max_penetration_mm": 0.11679809540510178,
+ "aligned": {
+  "medium": {
+   "latch_rate": 0.0,
+   "signature_rate": 0.0,
+   "retained_rate": 0.0,
+   "peak_axial_N": [],
+   "max_penetration_mm": null
+  }
+ },
+ "beam_estimate": {
+  "k_tip_N_per_m": 1164.641203703704,
+  "mean_max_deflection_deg": null,
+  "beam_tip_force_N": 0.0,
+  "peak_axial_over_beam_tip_force": null
+ },
+ "wall_s_per_sim_s": 1.4114358395555529,
+ "per_tier": {
+  "medium": {
+   "njmax": 400,
+   "naconmax": 256,
+   "shapes_per_world": 47,
+   "wall_s_per_sim_s": 1.4114358395555529,
+   "num_worlds": 2
+  }
+ },
+ "variants": {
+  "medium|1|0": {
+   "latch_rate": 0.5,
+   "retained_rate": 0.5,
+   "signature_rate": 0.5,
+   "peak_axial_N_mean": 0.8759461045265198,
+   "max_penetration_mm": 0.030357390642166138,
+   "exploded": 0,
+   "tunnel": 0
+  },
+  "medium|1|2": {
+   "latch_rate": 1.0,
+   "retained_rate": 1.0,
+   "signature_rate": 1.0,
+   "peak_axial_N_mean": 11.251856088638306,
+   "max_penetration_mm": 0.11679809540510178,
+   "exploded": 0,
+   "tunnel": 0
+  }
+ },
+ "episodes": [
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 0.0,
+   "seed": 0,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.632763405827179,
+   "peak_axial_N": 1.7518922090530396,
+   "after_snap_min_axial_N": -0.29422712326049805,
+   "signature": true,
+   "max_penetration_mm": 0.030357390642166138,
+   "max_depth_mm": 16.030358150601387,
+   "depth_end_hold_mm": 15.993811190128326,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 2.0,
+   "seed": 0,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.619427034585906,
+   "peak_axial_N": 2.8161778450012207,
+   "after_snap_min_axial_N": -0.5936154723167419,
+   "signature": true,
+   "max_penetration_mm": 0.11679809540510178,
+   "max_depth_mm": 15.869759023189545,
+   "depth_end_hold_mm": 15.838725492358208,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 0.0,
+   "seed": 1,
+   "latched": false,
+   "retained": false,
+   "max_deflection_deg": 0.0,
+   "peak_axial_N": 0.0,
+   "after_snap_min_axial_N": null,
+   "signature": false,
+   "max_penetration_mm": 0.0,
+   "max_depth_mm": 0.08567492477595806,
+   "depth_end_hold_mm": 0.08566271571908146,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 2.0,
+   "seed": 1,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -7.955841911271287,
+   "peak_axial_N": 19.68753433227539,
+   "after_snap_min_axial_N": -0.0,
+   "signature": true,
+   "max_penetration_mm": 0.05157617852091789,
+   "max_depth_mm": 15.864064916968346,
+   "depth_end_hold_mm": 15.843326225876808,
+   "exploded": false,
+   "tunnel": false
+  }
+ ]
+}

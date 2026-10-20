@@ -207,13 +207,7 @@ def _box(stage, path, lo, hi, color, collide=True) -> Usd.Prim:
 def _prism(stage, path, quad, axis: int, extent, color) -> Usd.Prim:
     """Convex quadrilateral prism: ``quad`` = 4 (a, b) points in the plane normal to ``axis``, extruded over
     ``extent`` = (lo, hi) along ``axis``. Collides as a convex hull."""
-    others = [i for i in range(3) if i != axis]
-    pts = []
-    for s in extent:
-        for a, b in quad:
-            p = [0.0, 0.0, 0.0]
-            p[axis], p[others[0]], p[others[1]] = s, a, b
-            pts.append(Gf.Vec3f(*p))
+    pts = [Gf.Vec3f(*p) for p in prism_points(quad, axis, extent)]
     mesh = UsdGeom.Mesh.Define(stage, path)
     mesh.CreatePointsAttr(Vt.Vec3fArray(pts))
     mesh.CreateFaceVertexCountsAttr(Vt.IntArray([4] * 6))
@@ -302,35 +296,76 @@ def build_plug(path: Path, dims: RJ45Dims) -> Path:
 # ----------------------------------------------------------------------------------------------- panel
 
 
-def _build_jack(stage, port: str, d: RJ45Dims, g: JackGeometry) -> None:
-    """Jack colliders under ``port`` in the jack frame (latch side +Z)."""
+def jack_parts(d: RJ45Dims, g: JackGeometry) -> list[tuple]:
+    """Engine-neutral jack colliders in the jack frame (latch side +Z), shared by the USD (PhysX) and Newton builders.
+
+    ``("box", name, lo, hi, color)``: axis-aligned box from corner ``lo`` to ``hi``.
+    ``("prism", name, quad, axis, extent, color)``: convex quadrilateral prism, see :func:`_prism`."""
     hw, hh = g.width / 2, g.height / 2
     ow = g.outer_width / 2
     ll, lw = g.lip_start, d.lead_in_width
     zt, zb = g.z_top_outer, g.z_bottom_outer
     sd, sw = g.seat_depth, g.slot_width / 2
+    return [
+        ("box", "wall_left", (ll, hw, zb), (sd, ow, zt), JACK_COLOR),
+        ("box", "wall_right", (ll, -ow, zb), (sd, -hw, zt), JACK_COLOR),
+        ("box", "wall_bottom", (ll, -hw, zb), (sd, hw, -hh), JACK_COLOR),
+        # Ceiling: shoulders either side of the latch slot hold the body; the slot is closed by lip + ledge at the mouth.
+        ("box", "shoulder_left", (ll, sw, hh), (sd, hw, zt), JACK_COLOR),
+        ("box", "shoulder_right", (ll, -hw, hh), (sd, -sw, zt), JACK_COLOR),
+        ("box", "top_lip", (ll, -sw, hh), (g.catch_start, sw, zt), JACK_COLOR),
+        ("box", "catch_ledge", (g.catch_start, -sw, hh), (g.catch_depth, sw, zt), LEDGE_COLOR),
+        ("box", "pocket_roof", (g.catch_depth, -sw, hh + g.pocket_height), (sd, sw, zt), JACK_COLOR),
+        ("box", "back_stop", (sd, -ow, zb), (sd + d.back_wall, ow, zt), JACK_COLOR),
+        # Lead-in wedges (x in [0, lead-in length]): chamfer from (opening + lead_in_width) at the mouth to the opening.
+        ("prism", "lead_in_top", [(0, hh + lw), (ll, hh), (ll, zt), (0, zt)], 1, (-ow, ow), JACK_COLOR),
+        ("prism", "lead_in_bottom", [(0, -hh - lw), (0, zb), (ll, zb), (ll, -hh)], 1, (-ow, ow), JACK_COLOR),
+        # axis z: quad points are (x, y)
+        ("prism", "lead_in_left", [(0, hw + lw), (0, ow), (ll, ow), (ll, hw)], 2, (-hh, hh), JACK_COLOR),
+        ("prism", "lead_in_right", [(0, -hw - lw), (ll, -hw), (ll, -ow), (0, -ow)], 2, (-hh, hh), JACK_COLOR),
+    ]
 
-    _box(stage, f"{port}/wall_left", (ll, hw, zb), (sd, ow, zt), JACK_COLOR)
-    _box(stage, f"{port}/wall_right", (ll, -ow, zb), (sd, -hw, zt), JACK_COLOR)
-    _box(stage, f"{port}/wall_bottom", (ll, -hw, zb), (sd, hw, -hh), JACK_COLOR)
-    # Ceiling: shoulders either side of the latch slot hold the body; the slot is closed by lip + ledge at the mouth.
-    _box(stage, f"{port}/shoulder_left", (ll, sw, hh), (sd, hw, zt), JACK_COLOR)
-    _box(stage, f"{port}/shoulder_right", (ll, -hw, hh), (sd, -sw, zt), JACK_COLOR)
-    _box(stage, f"{port}/top_lip", (ll, -sw, hh), (g.catch_start, sw, zt), JACK_COLOR)
-    _box(stage, f"{port}/catch_ledge", (g.catch_start, -sw, hh), (g.catch_depth, sw, zt), LEDGE_COLOR)
-    _box(stage, f"{port}/pocket_roof", (g.catch_depth, -sw, hh + g.pocket_height), (sd, sw, zt), JACK_COLOR)
-    _box(stage, f"{port}/back_stop", (sd, -ow, zb), (sd + d.back_wall, ow, zt), JACK_COLOR)
 
-    # Lead-in wedges (x in [0, lead-in length]): chamfer from (opening + lead_in_width) at the mouth to the opening.
-    _prism(stage, f"{port}/lead_in_top", [(0, hh + lw), (ll, hh), (ll, zt), (0, zt)], 1, (-ow, ow), JACK_COLOR)
-    _prism(stage, f"{port}/lead_in_bottom", [(0, -hh - lw), (0, zb), (ll, zb), (ll, -hh)], 1, (-ow, ow), JACK_COLOR)
-    # axis z: quad points are (x, y)
-    _prism(stage, f"{port}/lead_in_left", [(0, hw + lw), (0, ow), (ll, ow), (ll, hw)], 2, (-hh, hh), JACK_COLOR)
-    _prism(stage, f"{port}/lead_in_right", [(0, -hw - lw), (ll, -hw), (ll, -ow), (0, -ow)], 2, (-hh, hh), JACK_COLOR)
+def prism_points(quad, axis: int, extent) -> list[tuple[float, float, float]]:
+    """The 8 vertices of a :func:`_prism` (both end quads, ``extent[0]`` first)."""
+    others = [i for i in range(3) if i != axis]
+    pts = []
+    for s in extent:
+        for a, b in quad:
+            p = [0.0, 0.0, 0.0]
+            p[axis], p[others[0]], p[others[1]] = s, a, b
+            pts.append(tuple(p))
+    return pts
+
+
+def plate_parts(d: RJ45Dims, g: JackGeometry) -> list[tuple]:
+    """Plate boxes in the panel frame, ``("box", name, lo, hi, color)``; frame around the jack housings."""
+    port_y = [(1 - i) * d.pitch for i in range(d.n_ports)]
+    ow = g.outer_width / 2
+    # The port flip maps jack z in [zb, zt] to [-zt, -zb].
+    z_lo, z_hi = -g.z_top_outer, -g.z_bottom_outer
+    m, t = d.plate_margin, d.plate_thickness
+    y_min, y_max = port_y[-1] - ow - m, port_y[0] + ow + m
+    parts = [
+        ("box", "top", (0, y_min, z_hi), (t, y_max, z_hi + m), PLATE_COLOR),
+        ("box", "bottom", (0, y_min, z_lo - m), (t, y_max, z_lo), PLATE_COLOR),
+    ]
+    edges = [y_max] + [e for y in port_y for e in (y + ow, y - ow)] + [y_min]
+    for k in range(0, len(edges), 2):
+        hi_, lo_ = edges[k], edges[k + 1]
+        if hi_ - lo_ > 1e-5:
+            parts.append(("box", f"strip_{k // 2}", (0, lo_, z_lo), (t, hi_, z_hi), PLATE_COLOR))
+    return parts
+
+
+def _build_jack(stage, port: str, d: RJ45Dims, g: JackGeometry) -> None:
+    """Jack colliders under ``port`` in the jack frame (latch side +Z)."""
+    for kind, name, *spec in jack_parts(d, g):
+        (_box if kind == "box" else _prism)(stage, f"{port}/{name}", *spec)
 
     _xform(stage, f"{port}/mouth")
     _xform(stage, f"{port}/seat", (g.seat_depth, 0.0, 0.0))
-    _xform(stage, f"{port}/catch", (g.catch_depth, 0.0, hh))
+    _xform(stage, f"{port}/catch", (g.catch_depth, 0.0, g.height / 2))
 
 
 def build_panel(path: Path, dims: RJ45Dims, tier: str, kinematic: bool = True) -> Path:
@@ -349,18 +384,9 @@ def build_panel(path: Path, dims: RJ45Dims, tier: str, kinematic: bool = True) -
         _xform(stage, port, (0.0, y, 0.0), flip)
         _build_jack(stage, port, dims, g)
 
-    # Plate (panel frame): frame around the jack housings. The flip maps jack z in [zb, zt] to [-zt, -zb].
-    ow = g.outer_width / 2
-    z_lo, z_hi = -g.z_top_outer, -g.z_bottom_outer
-    m, t = dims.plate_margin, dims.plate_thickness
-    y_min, y_max = port_y[-1] - ow - m, port_y[0] + ow + m
-    _box(stage, "/Panel/plate/top", (0, y_min, z_hi), (t, y_max, z_hi + m), PLATE_COLOR)
-    _box(stage, "/Panel/plate/bottom", (0, y_min, z_lo - m), (t, y_max, z_lo), PLATE_COLOR)
-    edges = [y_max] + [e for y in port_y for e in (y + ow, y - ow)] + [y_min]
-    for k in range(0, len(edges), 2):
-        hi_, lo_ = edges[k], edges[k + 1]
-        if hi_ - lo_ > 1e-5:
-            _box(stage, f"/Panel/plate/strip_{k // 2}", (0, lo_, z_lo), (t, hi_, z_hi), PLATE_COLOR)
+    # Plate (panel frame): frame around the jack housings.
+    for _, name, lo, hi, color in plate_parts(dims, g):
+        _box(stage, f"/Panel/plate/{name}", lo, hi, color)
 
     stage.GetRootLayer().Save()
     return path

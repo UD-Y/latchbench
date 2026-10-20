@@ -99,6 +99,9 @@ python scripts/check_contact.py --viz kit --tiers medium --offsets_mm 0 --tilts_
   repeatable rise → peak → drop force on all tiers, no explosions or tunnelling
   ([results/contact_tuning/REPORT.md](results/contact_tuning/REPORT.md)). Contact force must include friction
   (`track_friction_forces=True`, 64 contact slots); normal-only force under-reads the latch load ~10×.
+- **Second engine:** the same probe on Newton 1.5 (MuJoCo-Warp) reproduces the latch signature on every tier, but
+  MuJoCo's soft friction does not hold a plug that lands on the jack face, so jams (and the tier ranking) are much
+  weaker than on PhysX ([results/newton_vs_physx/REPORT.md](results/newton_vs_physx/REPORT.md)).
 - **Servo:** STS3215 firmware loop → PWM duty → DC motor → BAM m5 gearbox friction, LeRobot gains (P = 16); hold
   test: sag ≤ 1.8°, 30° step settles in 0.33 s ([results/hold_test](results/hold_test)).
 - **Controllers:** the expert (σ = 0) latched 16/20 on loose (gate G2).

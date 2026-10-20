@@ -1,0 +1,243 @@
+{
+ "run_id": "jam_imp10",
+ "config": {
+  "engine": "newton",
+  "newton": "1.5.0",
+  "warp": "1.16.0",
+  "solver": "SolverMuJoCo",
+  "dt": 0.0020833333333333333,
+  "substeps": 8,
+  "solref": [
+   0.0005208333333333333,
+   1.0
+  ],
+  "solimp": [
+   0.99,
+   0.999,
+   0.0002,
+   0.5,
+   2.0
+  ],
+  "iterations": 100,
+  "ls_iterations": 50,
+  "cone": "elliptic",
+  "impratio": 10.0,
+  "condim": 3,
+  "multiccd": false,
+  "latch_armature": 0.0,
+  "contacts": "mujoco",
+  "gap_m": 0.0,
+  "friction": 0.35,
+  "cuda_graph": true
+ },
+ "num_envs": 4,
+ "seeds": 2,
+ "sim_steps_per_s": 289.3259726773373,
+ "explosions": 0,
+ "tunnels": 0,
+ "max_penetration_mm": 0.12210197746753693,
+ "aligned": {
+  "medium": {
+   "latch_rate": 1.0,
+   "signature_rate": 1.0,
+   "retained_rate": 1.0,
+   "peak_axial_N": [
+    1.53,
+    1.547
+   ],
+   "max_penetration_mm": 0.01496635377407074
+  }
+ },
+ "beam_estimate": {
+  "k_tip_N_per_m": 1164.641203703704,
+  "mean_max_deflection_deg": 6.6082026859020475,
+  "beam_tip_force_N": 1.6118852444277665,
+  "peak_axial_over_beam_tip_force": 0.9546012527063655
+ },
+ "wall_s_per_sim_s": 1.659028380888938,
+ "per_tier": {
+  "medium": {
+   "njmax": 400,
+   "naconmax": 512,
+   "shapes_per_world": 47,
+   "wall_s_per_sim_s": 1.659028380888938,
+   "num_worlds": 4
+  }
+ },
+ "variants": {
+  "medium|0|0": {
+   "latch_rate": 1.0,
+   "retained_rate": 1.0,
+   "signature_rate": 1.0,
+   "peak_axial_N_mean": 1.538707673549652,
+   "max_penetration_mm": 0.01496635377407074,
+   "exploded": 0,
+   "tunnel": 0
+  },
+  "medium|0|2": {
+   "latch_rate": 1.0,
+   "retained_rate": 1.0,
+   "signature_rate": 1.0,
+   "peak_axial_N_mean": 1.5757924318313599,
+   "max_penetration_mm": 0.012606848031282425,
+   "exploded": 0,
+   "tunnel": 0
+  },
+  "medium|1|0": {
+   "latch_rate": 1.0,
+   "retained_rate": 1.0,
+   "signature_rate": 1.0,
+   "peak_axial_N_mean": 2.575533628463745,
+   "max_penetration_mm": 0.02791173756122589,
+   "exploded": 0,
+   "tunnel": 0
+  },
+  "medium|1|2": {
+   "latch_rate": 1.0,
+   "retained_rate": 1.0,
+   "signature_rate": 1.0,
+   "peak_axial_N_mean": 3.0404340624809265,
+   "max_penetration_mm": 0.12210197746753693,
+   "exploded": 0,
+   "tunnel": 0
+  }
+ },
+ "episodes": [
+  {
+   "tier": "medium",
+   "offset_mm": 0.0,
+   "tilt_deg": 0.0,
+   "seed": 0,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.607265028995052,
+   "peak_axial_N": 1.5304031372070312,
+   "after_snap_min_axial_N": -0.0,
+   "signature": true,
+   "max_penetration_mm": 0.01496635377407074,
+   "max_depth_mm": 16.01496711373329,
+   "depth_end_hold_mm": 16.000181436538696,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 0.0,
+   "tilt_deg": 2.0,
+   "seed": 0,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.608636189470932,
+   "peak_axial_N": 1.5663464069366455,
+   "after_snap_min_axial_N": -0.2996562719345093,
+   "signature": true,
+   "max_penetration_mm": 0.001178821548819542,
+   "max_depth_mm": 15.839971601963043,
+   "depth_end_hold_mm": 15.839971601963043,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 0.0,
+   "seed": 0,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -7.282171815696468,
+   "peak_axial_N": 1.804914951324463,
+   "after_snap_min_axial_N": -0.0,
+   "signature": true,
+   "max_penetration_mm": 0.02292729914188385,
+   "max_depth_mm": 16.022928059101105,
+   "depth_end_hold_mm": 15.99128544330597,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 2.0,
+   "seed": 0,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.609480571607074,
+   "peak_axial_N": 1.740002989768982,
+   "after_snap_min_axial_N": -0.7194871306419373,
+   "signature": true,
+   "max_penetration_mm": 0.12210197746753693,
+   "max_depth_mm": 15.862984582781792,
+   "depth_end_hold_mm": 15.83445630967617,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 0.0,
+   "tilt_deg": 0.0,
+   "seed": 1,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.609140342809043,
+   "peak_axial_N": 1.547012209892273,
+   "after_snap_min_axial_N": -0.0,
+   "signature": true,
+   "max_penetration_mm": 0.01496635377407074,
+   "max_depth_mm": 16.01496711373329,
+   "depth_end_hold_mm": 16.000181436538696,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 0.0,
+   "tilt_deg": 2.0,
+   "seed": 1,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -7.586787153621635,
+   "peak_axial_N": 1.5852384567260742,
+   "after_snap_min_axial_N": -0.4125521779060364,
+   "signature": true,
+   "max_penetration_mm": 0.012606848031282425,
+   "max_depth_mm": 15.829535201191902,
+   "depth_end_hold_mm": 15.829535201191902,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 0.0,
+   "seed": 1,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -7.195115078309131,
+   "peak_axial_N": 3.3461523056030273,
+   "after_snap_min_axial_N": -0.0,
+   "signature": true,
+   "max_penetration_mm": 0.02791173756122589,
+   "max_depth_mm": 16.027912497520447,
+   "depth_end_hold_mm": 15.991652384400368,
+   "exploded": false,
+   "tunnel": false
+  },
+  {
+   "tier": "medium",
+   "offset_mm": 1.0,
+   "tilt_deg": 2.0,
+   "seed": 1,
+   "latched": true,
+   "retained": true,
+   "max_deflection_deg": -6.693844506914133,
+   "peak_axial_N": 4.340865135192871,
+   "after_snap_min_axial_N": -0.38108834624290466,
+   "signature": true,
+   "max_penetration_mm": 0.042367493733763695,
+   "max_depth_mm": 15.878556296229362,
+   "depth_end_hold_mm": 15.866998583078384,
+   "exploded": false,
+   "tunnel": false
+  }
+ ]
+}
