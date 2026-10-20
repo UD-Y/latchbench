@@ -15,7 +15,7 @@ Use the Arena venv's python. On the laptop, every Isaac Sim run holds the shared
 
 ```bash
 cd ~/work/patchbench
-flock ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers loose --n 16 --num_envs 16
+flock -o ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers loose --n 16 --num_envs 16
 ```
 
 | flag | default | meaning |

@@ -1,7 +1,7 @@
 """Evaluator CLI: runs a policy per tier and writes results/<policy>/<tier>.json (CLAUDE.md section 6.2).
 
     # laptop, state-only (hold the shared Isaac lock)
-    flock ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers loose --n 16 --num_envs 16
+    flock -o ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers loose --n 16 --num_envs 16
     # Brev: a LeRobot policy served from the lerobot venv over ZMQ (cameras on)
     python scripts/evaluate.py --policy lerobot --policy.path $HF_USER/patchbench-groot-n17 --tiers loose --n 100 --num_envs 8
 

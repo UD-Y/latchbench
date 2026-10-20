@@ -157,7 +157,7 @@ if [[ "$SKIP_TESTS" == false ]]; then
   (
     cd "$ARENA"
     export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
-    flock "$ISAAC_LOCK" "$ARENA/.venv/bin/python" isaaclab_arena/evaluation/policy_runner.py \
+    flock -o "$ISAAC_LOCK" "$ARENA/.venv/bin/python" isaaclab_arena/evaluation/policy_runner.py \
       --policy_type zero_action --num_steps 20 cube_goal_pose
   )
 fi

@@ -14,7 +14,8 @@
 #   5  pack          results tarball in ~/out; then `sudo poweroff` unless NO_POWEROFF=1
 # A failed stage is logged and the chain carries on with every stage that does not depend on it (sweeps do not
 # need data; GR00T needs the converted dataset), then packs and powers off, so a failure never burns the night.
-# Isaac Sim launches run one at a time (flock on ~/work/.isaac.lock, as on the laptop).
+# Isaac Sim launches run one at a time (flock -o on ~/work/.isaac.lock, as on the laptop; -o so the Omniverse Hub
+# daemon that Isaac Sim spawns does not inherit the lock and hold it after the run).
 #
 # Knobs (environment variables; defaults in brackets):
 #   EPISODES_PER_PORT [150]  DATAGEN_TIERS [loose,medium]  DATAGEN_NUM_ENVS [8]  IMG_H/IMG_W [480/640]
@@ -211,7 +212,7 @@ preflight() {
 stage_gen_data() {
   if datagen_complete; then log "gen_data: $RAW complete; skipped"; return 0; fi
   cd "$PB"
-  flock "$ISAAC_LOCK" "$ARENA_PY" scripts/gen_data.py --tiers "$DATAGEN_TIERS" \
+  flock -o "$ISAAC_LOCK" "$ARENA_PY" scripts/gen_data.py --tiers "$DATAGEN_TIERS" \
     --episodes_per_port "$EPISODES_PER_PORT" --num_envs "$DATAGEN_NUM_ENVS" --height "$IMG_H" --width "$IMG_W" \
     --out "$RAW" ${EXPERT_CONTROLLER:+--expert_controller "$EXPERT_CONTROLLER"}  # expert pose_noise_mm defaults to 0
 }
@@ -229,7 +230,7 @@ stage_sweeps() {
   local p
   for p in "${SWEEP_POLICIES[@]}"; do
     if policy_complete "$p"; then log "sweeps: $p complete; skipped"; continue; fi
-    flock "$ISAAC_LOCK" "$ARENA_PY" scripts/evaluate.py --policy "$p" --tiers "$SWEEP_TIERS" --n "$SWEEP_N" \
+    flock -o "$ISAAC_LOCK" "$ARENA_PY" scripts/evaluate.py --policy "$p" --tiers "$SWEEP_TIERS" --n "$SWEEP_N" \
       --num_envs "$SWEEP_NUM_ENVS" --seed 0 --pose_noise_mm "$SWEEP_POSE_NOISE_MM" --out "$RESULTS/"
   done
   "$ARENA_PY" scripts/leaderboard.py || log "leaderboard.py failed (non-fatal)"

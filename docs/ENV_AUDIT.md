@@ -231,3 +231,11 @@ Wrist camera: with the isaaclab_so101 mount, the camera looks along the plug, an
 Joint-space push (`--push`): when the tip blocks on the lead-in, the axial load times the 0.16 m wrist-pitch-to-TCP
 lever rotates the P-only wrist servo, and the tip slides down the panel face (13 mm in one run with fast alignment).
 Controllers must align before pushing and keep the push force low until the tip is inside.
+
+## 11. Isaac lock: use `flock -o` (20 Oct)
+
+Isaac Sim starts the **Omniverse Hub** daemon (`~/.local/share/ov/pkg/hub-*/hub --mode=shared`) on first use; it
+outlives the Isaac process and inherits open file descriptors. Under plain `flock LOCK cmd` it inherited the lock fd
+and held `~/work/.isaac.lock` indefinitely, so the next locked launch waited forever (a 30 min stall on 20 Oct).
+`flock -o` closes the fd in the child before exec; the lock is still held by `flock` itself until the command exits.
+All scripts and docs use `flock -o`. If a launch hangs on the lock: `lsof ~/work/.isaac.lock`.

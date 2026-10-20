@@ -1,7 +1,7 @@
 """RJ45PanelEnv(ExampleEnvironmentBase), name ``rj45_panel``; loaded via ``--external_environment_class_path``.
 
     cd ~/work/IsaacLab-Arena && source .venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
-    flock ~/work/.isaac.lock python isaaclab_arena/evaluation/policy_runner.py --headless --policy_type zero_action \
+    flock -o ~/work/.isaac.lock python isaaclab_arena/evaluation/policy_runner.py --headless --policy_type zero_action \
         --num_episodes 2 --external_environment_class_path patchbench.environment:RJ45PanelEnv \
         rj45_panel --tier loose --port random --port_est_noise_mm 1
 

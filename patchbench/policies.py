@@ -2,7 +2,7 @@
 
 Run through Arena's policy runner with the dotted class path (registration happens on import), e.g.::
 
-    flock ~/work/.isaac.lock python isaaclab_arena/evaluation/policy_runner.py \
+    flock -o ~/work/.isaac.lock python isaaclab_arena/evaluation/policy_runner.py \
         --policy_type patchbench.policies.ExpertPolicy --num_episodes 20 --num_envs 8 \
         --external_environment_class_path patchbench.environment:RJ45PanelEnv rj45_panel --tier loose
 

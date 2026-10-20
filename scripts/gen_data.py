@@ -3,7 +3,7 @@
 Runs in the Arena venv. Only successful (latched) episodes are saved. Resumable: per (tier, port) it counts the
 successes already in ``--out/manifest.json`` and generates only the rest.
 
-    flock ~/work/.isaac.lock python scripts/gen_data.py --tiers loose,medium --episodes_per_port 150 \
+    flock -o ~/work/.isaac.lock python scripts/gen_data.py --tiers loose,medium --episodes_per_port 150 \
         --num_envs 8 --height 480 --width 640 --out ~/data/raw/patchbench_v0
 
 The top-level call never starts Isaac Sim itself: it runs one child process per (tier, port) in sequence (the env
