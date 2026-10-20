@@ -16,3 +16,4 @@ logs/
 results/gui/
 results/contact_tuning/smoke/
 results/*/raw/*.log
+results/newton_showcase/scene/

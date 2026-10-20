@@ -198,15 +198,16 @@ def main():
     b = newton.ModelBuilder()
     newton.solvers.SolverMuJoCo.register_custom_attributes(b)
     b.rigid_gap = 1e-3  # contact detection gap for the arm's MJCF shapes (default would add far-field contacts)
-    b.add_mjcf(str(xml), floating=False, enable_self_collisions=False)
+    # Mount Menagerie's base at B: Newton's world is then the PhysX env frame (isaaclab-so101 base on the table, z = 0)
+    b.add_mjcf(str(xml), xform=to_wp(B), floating=False, enable_self_collisions=False)
     grip = [i for i, lab in enumerate(b.body_label) if lab.endswith("/gripper")][0]
     in_hand = T(Rot.from_quat(PLUG_IN_HAND_ROT_XYZW).as_matrix(), plug_in_hand_pos())  # isaaclab gripper frame
     in_hand_nw = G @ in_hand
     ids = add_plug(b, grip, to_wp(in_hand_nw), cc)
     extend_last_articulation(b, ids["joints"])
 
-    # panel: jack_1 frame from plan_targets (our kinematic frame) mapped into Newton's world (T_ours = B T_nw G)
-    jack1 = np.linalg.inv(B) @ jack_us
+    # panel: jack_1 frame from plan_targets; our kinematic frame is Newton's world (robot mounted at B)
+    jack1 = jack_us
     panel_w = jack1 @ T(Rot.from_quat([1.0, 0.0, 0.0, 0.0]).as_matrix())  # jack1 = panel @ FLIP, FLIP self-inverse
     add_panel(b, args.tier, to_wp(panel_w), cc)  # no ground plane here: the arm never touches the table
     model = b.finalize(device=args.device)
