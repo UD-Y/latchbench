@@ -77,6 +77,16 @@ flock -o ~/work/.isaac.lock ~/work/IsaacLab-Arena/.venv/bin/python scripts/gen_d
 Overnight on Brev, `scripts/brev/chain_overnight.sh` runs both steps: 480×640, `num_envs` sized from the L40S pilot,
 and a push to `$HF_USER/patchbench-so101-v0`.
 
+## Look (camera images)
+
+Camera runs use the realistic look layers by default (`--look real`, env flag): `usd/look/*.usd` reference the physics
+USDs and only add render meshes and materials (clear plug with T568B conductors and gold contacts, boot, nickel-rimmed
+jacks, link LEDs; `patchbench/assets/build_visuals.py`), plus a render-only trailing cable (24 segments re-posed every
+control step from the boot to the table, `patchbench/cable_visual.py`; no physics). Physics is identical: a 16-episode
+telemetry_spiral run on medium gives 0 differing fields between `--look real` and `--look plain` (20 Oct). Datagen
+throughput is unchanged (2.5 env-frames/s, 1 env, laptop, 240×320). GR00T must be evaluated with the same look it was
+trained on.
+
 ## Laptop pilot (19 Oct, datagen v0)
 
 Settings: loose tier, 1 latched episode per port, 1 env, cameras at 240×320, expert = `open_loop` with σ = 0.

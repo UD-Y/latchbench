@@ -23,6 +23,22 @@ from patchbench.assets.build_assets import TIERS, USD_DIR, RJ45Dims, jack_geomet
 
 DIMS = RJ45Dims()
 
+LOOK = True
+"""Use the render-only look layers (usd/look/*.usd: realistic plug, cable, jacks; build_visuals.py). They reference
+the physics USDs and only add visual meshes and materials, so physics is identical either way. Set by the env
+(``--look``) before any asset is constructed."""
+
+CABLE_SEGMENTS = 24
+"""Render-only trailing cable: number of segments re-posed each control step (cable_visual.py) when cameras are on."""
+
+
+def plug_usd_path() -> str:
+    return str(USD_DIR / "look" / "plug_look.usd") if LOOK else str(USD_DIR / "medium" / "plug.usd")
+
+
+def panel_usd_path(tier: str) -> str:
+    return str(USD_DIR / "look" / f"panel_3port_{tier}_look.usd") if LOOK else str(USD_DIR / tier / f"panel_3port_{tier}.usd")
+
 PLUG_GRASP_BEHIND = 0.020
 """m. The jaws hold the cable 20 mm behind the plug's rear face (a boot/cable stub, visual only), so the gripper stays
 >= 26 mm in front of the panel face at full insertion (seat depth 16 mm). Grasp assumption, CLAUDE.md section 5."""
@@ -110,7 +126,8 @@ if HAVE_ISAAC:
                 PhysxSchema.PhysxRigidBodyAPI.Apply(prim).CreateMaxDepenetrationVelocityAttr(physics.MAX_DEPENETRATION_VELOCITY)
 
 
-    def attach_plug(stage: Usd.Stage, robot_path: str, plug_usd: str, pos, rot_xyzw, parent_link: str = "gripper") -> None:
+    def attach_plug(stage: Usd.Stage, robot_path: str, plug_usd: str, pos, rot_xyzw, parent_link: str = "gripper",
+                    cable_segments: int = 0) -> None:
         """Reference ``plug_usd`` at ``<robot>/Plug`` and weld ``Plug/body`` to ``<robot>/<parent_link>`` at (pos, rot).
 
         The plug prim is posed consistently with the link's current USD pose so the articulation starts closed.
@@ -132,14 +149,38 @@ if HAVE_ISAAC:
         joint.CreateLocalPos1Attr(Gf.Vec3f(0.0))
         joint.CreateLocalRot1Attr(Gf.Quatf(1.0))
 
-        # Visual cable stub from the plug's rear face back through the jaws (no collider, no mass).
-        length = PLUG_GRASP_BEHIND + 0.015
-        cable = UsdGeom.Cylinder.Define(stage, f"{robot_path}/Plug/body/cable_stub")
-        cable.CreateAxisAttr(UsdGeom.Tokens.x)
-        cable.CreateRadiusAttr(0.003)
-        cable.CreateHeightAttr(length)
-        cable.AddTranslateOp().Set(Gf.Vec3d(-DIMS.plug_length - length / 2, 0.0, 0.0))
-        cable.CreateDisplayColorAttr([Gf.Vec3f(0.15, 0.35, 0.8)])
+        look = "/look/" in plug_usd
+        if not look:
+            # Visual cable stub from the plug's rear face back through the jaws (no collider, no mass).
+            length = PLUG_GRASP_BEHIND + 0.015
+            cable = UsdGeom.Cylinder.Define(stage, f"{robot_path}/Plug/body/cable_stub")
+            cable.CreateAxisAttr(UsdGeom.Tokens.x)
+            cable.CreateRadiusAttr(0.003)
+            cable.CreateHeightAttr(length)
+            cable.AddTranslateOp().Set(Gf.Vec3d(-DIMS.plug_length - length / 2, 0.0, 0.0))
+            cable.CreateDisplayColorAttr([Gf.Vec3f(0.15, 0.35, 0.8)])
+        if cable_segments:
+            # Trailing cable (render only): segments posed every control step by cable_visual.cable_follow; the
+            # look layer's static cable is hidden. Each segment: unit-length cylinder along +X, scaled in X.
+            if look:
+                UsdGeom.Imageable(stage.OverridePrim(f"{robot_path}/Plug/body/look/cable")).CreateVisibilityAttr(
+                    UsdGeom.Tokens.invisible
+                )
+            jacket = UsdShade.Material(stage.GetPrimAtPath(f"{robot_path}/Plug/Looks/jacket_pvc"))
+            for k in range(cable_segments):
+                seg = UsdGeom.Xform.Define(stage, f"{robot_path}/cable_vis/seg_{k:02d}")
+                seg.AddTranslateOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Vec3d(0.0, 0.0, -1.0))
+                seg.AddOrientOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Quatd(1.0))
+                seg.AddScaleOp(UsdGeom.XformOp.PrecisionDouble).Set(Gf.Vec3d(0.01, 1.0, 1.0))
+                cyl = UsdGeom.Cylinder.Define(stage, f"{robot_path}/cable_vis/seg_{k:02d}/tube")
+                cyl.CreateAxisAttr(UsdGeom.Tokens.x)
+                cyl.CreateRadiusAttr(0.003)
+                cyl.CreateHeightAttr(1.0)
+                cyl.AddTranslateOp().Set(Gf.Vec3d(0.5, 0.0, 0.0))
+                if jacket:
+                    UsdShade.MaterialBindingAPI.Apply(cyl.GetPrim()).Bind(jacket)
+                else:
+                    cyl.CreateDisplayColorAttr([Gf.Vec3f(0.09, 0.30, 0.74)])
         author_contact_physics(stage, f"{robot_path}/Plug", plug_links=True)
 
 
@@ -147,7 +188,8 @@ if HAVE_ISAAC:
     def spawn_robot_with_plug(prim_path: str, cfg: RobotWithPlugUsdFileCfg, translation=None, orientation=None, **kwargs):
         """``spawn_from_usd`` for the robot, then :func:`attach_plug` (cloned to every env together with the robot)."""
         prim = _spawn_from_usd_file(prim_path, cfg.usd_path, cfg, translation, orientation)
-        attach_plug(prim.GetStage(), prim_path, cfg.plug_usd_path, cfg.plug_pos, cfg.plug_rot_xyzw, cfg.plug_parent_link)
+        attach_plug(prim.GetStage(), prim_path, cfg.plug_usd_path, cfg.plug_pos, cfg.plug_rot_xyzw, cfg.plug_parent_link,
+                    cfg.cable_segments)
         return prim
 
 
@@ -160,6 +202,7 @@ if HAVE_ISAAC:
         plug_pos: tuple[float, float, float] = (0.0, 0.0, 0.0)
         plug_rot_xyzw: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
         plug_parent_link: str = "gripper"
+        cable_segments: int = 0
 
 
     @clone
@@ -186,7 +229,7 @@ if HAVE_ISAAC:
         tier: str = "medium"
 
         def __init__(self, instance_name: str | None = "rj45_panel", **kwargs):
-            spawner = RJ45UsdFileCfg(usd_path=str(USD_DIR / self.tier / f"panel_3port_{self.tier}.usd"))
+            spawner = RJ45UsdFileCfg(usd_path=panel_usd_path(self.tier))
             super().__init__(instance_name=instance_name, spawner_cfg=spawner, **kwargs)
             self.geometry = jack_geometry(DIMS, self.tier)
 
@@ -267,10 +310,9 @@ if HAVE_ISAAC:
 
         name = "rj45_plug"
         tags = ["object", "rj45"]
-        usd_path = str(USD_DIR / "medium" / "plug.usd")  # identical for every tier
-
         def __init__(self, instance_name: str | None = None):
             super().__init__(name=instance_name or self.name, tags=list(self.tags))
+            self.usd_path = plug_usd_path()  # identical for every tier
 
         def attach_to(
             self,
@@ -278,6 +320,7 @@ if HAVE_ISAAC:
             pos: tuple[float, float, float] | None = None,
             rot_xyzw: tuple[float, float, float, float] = PLUG_IN_HAND_ROT_XYZW,
             parent_link: str = "gripper",
+            cable_segments: int = 0,
         ) -> ArticulationCfg:
             """Copy of ``robot_cfg`` whose USD spawner also adds this plug, welded to ``parent_link``."""
             spawn = robot_cfg.spawn
@@ -289,5 +332,6 @@ if HAVE_ISAAC:
                 plug_pos=pos if pos is not None else plug_in_hand_pos(),
                 plug_rot_xyzw=rot_xyzw,
                 plug_parent_link=parent_link,
+                cable_segments=cable_segments,
             )
             return robot_cfg.replace(spawn=new_spawn)

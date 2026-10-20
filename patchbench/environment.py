@@ -212,6 +212,7 @@ class RJ45PanelEnv(ExampleEnvironmentBase):
         from isaaclab_so101.assets import SO101_CFG
         from so101_contact.isaaclab.actuator import so101_sts3215_cfg
 
+        from patchbench import objects
         from patchbench.objects import PANEL_CLASSES, STAND_DEPTH, RJ45PanelStand, RJ45Plug, _RJ45Panel, stand_size
         from isaaclab_arena.recording.episode_recorder_manager import EpisodeRecorderTermCfg
 
@@ -221,7 +222,9 @@ class RJ45PanelEnv(ExampleEnvironmentBase):
         p = RJ45Params(
             tier=args_cli.tier, port=args_cli.port, pose_noise=args_cli.port_est_noise_mm * 1e-3,
             randomize=not args_cli.no_randomize, seed=args_cli.seed or 0,
+            cable_vis=bool(args_cli.enable_cameras) and args_cli.look == "real",
         )  # fmt: skip
+        objects.LOOK = args_cli.look == "real"  # before any asset is constructed
 
         panel = PANEL_CLASSES[p.tier]()
         panel.set_initial_pose(Pose(position_xyz=p.panel_pos), create_reset_event=False)
@@ -248,7 +251,7 @@ class RJ45PanelEnv(ExampleEnvironmentBase):
                 pos=SO101_CFG.init_state.pos, rot=SO101_CFG.init_state.rot, joint_pos={**q0, "latch_joint": 0.0}
             ),
         )
-        robot = RJ45Plug().attach_to(robot)
+        robot = RJ45Plug().attach_to(robot, cable_segments=objects.CABLE_SEGMENTS if p.cable_vis else 0)
         robot.spawn.activate_contact_sensors = True
         embodiment.scene_config.robot = robot
         embodiment.observation_config = make_observations_cfg()
@@ -289,5 +292,7 @@ class RJ45PanelEnv(ExampleEnvironmentBase):
             "--servo_friction_mode", choices=["physx_joint", "explicit"], default=physics.SERVO_FRICTION_MODE,
             help="STS3215 gearbox friction: PhysX joint friction (default, physics.py) or explicit torque (faster)",
         )
+        parser.add_argument("--look", choices=["real", "plain"], default="real",
+                            help="real: render-only look layers (usd/look) + trailing cable with cameras; physics identical")
         parser.add_argument("--camera_height", type=int, default=480)
         parser.add_argument("--camera_width", type=int, default=640)

@@ -66,6 +66,7 @@ class RJ45Params:
     stand_offset: tuple[float, float, float] = (0.0, 0.0, 0.0)  # stand centre in the panel frame (set by the env)
     seed: int = 0
     timeout_s: float = 20.0
+    cable_vis: bool = False  # render-only trailing cable (cameras on; cable_visual.py)
     extra: dict = field(default_factory=dict)
 
 
@@ -278,6 +279,8 @@ class RJ45SceneCfg:
 class RJ45EventsCfg:
     reset_rj45: EventTermCfg = EventTermCfg(func=reset_rj45, mode="reset")
     panel_friction: EventTermCfg | None = None  # set by RJ45InsertTask when randomizing
+    cable_reset: EventTermCfg | None = None  # render-only trailing cable (RJ45Params.cable_vis)
+    cable_follow: EventTermCfg | None = None
 
 
 class RJ45InsertTask(TaskBase):
@@ -307,6 +310,12 @@ class RJ45InsertTask(TaskBase):
 
     def get_events_cfg(self):
         cfg = RJ45EventsCfg()
+        if self.params.cable_vis:
+            from patchbench.cable_visual import cable_follow
+
+            cfg.cable_reset = EventTermCfg(func=cable_follow, mode="reset")
+            cfg.cable_follow = EventTermCfg(func=cable_follow, mode="interval", interval_range_s=(0.0, 0.0),
+                                            is_global_time=True)  # every control step  # fmt: skip
         if self.params.randomize:
             from isaaclab.envs import mdp
 
