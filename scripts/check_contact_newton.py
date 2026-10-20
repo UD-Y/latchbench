@@ -51,6 +51,10 @@ parser.add_argument("--multiccd", action="store_true", help="up to 4 contacts pe
 parser.add_argument("--contacts", default="mujoco", choices=["mujoco", "newton"],
                     help="mujoco: MuJoCo-Warp collision (one point per box-mesh pair); newton: Newton's collision "
                     "pipeline (contact manifolds) fed to the MuJoCo-Warp solver")
+parser.add_argument("--hydro", action="store_true", help="hydroelastic SDF contact (implies --contacts newton)")
+parser.add_argument("--kh", type=float, default=1e11, help="hydroelastic pressure stiffness [N/m^3] "
+                    "(Newton example_robot_panda_hydro)")
+parser.add_argument("--sdf_voxel", type=float, default=1e-4, help="m, SDF voxel size (1 mm latch and walls)")
 parser.add_argument("--gap", type=float, default=0.5e-3, help="m, contact detection gap (newton contacts only; "
                     "PhysX contact offset analogue)")
 parser.add_argument("--latch_armature", type=float, default=0.0, help="kg*m^2 added to the latch joint")
@@ -64,10 +68,12 @@ parser.add_argument("--device", default="cuda:0")
 parser.add_argument("--run_id", default=None)
 parser.add_argument("--out", type=Path, default=Path(__file__).resolve().parents[1] / "results" / "newton_vs_physx")
 args = parser.parse_args()
+if args.hydro:
+    args.contacts = "newton"
 
 SOLREF = (2 * args.dt / args.substeps, 1.0) if args.solref == "auto" else tuple(float(v) for v in args.solref.split(","))
 SOLIMP = tuple(float(v) for v in args.solimp.split(","))
-RUN_ID = args.run_id or (("nwc_" if args.contacts == "newton" else "") + f"nw_s{args.substeps}_tc{SOLREF[0] * 1e3:.2g}_d{SOLIMP[0]:g}_{args.cone[:3]}"
+RUN_ID = args.run_id or (("hydro_" if args.hydro else "nwc_" if args.contacts == "newton" else "") + f"nw_s{args.substeps}_tc{SOLREF[0] * 1e3:.2g}_d{SOLIMP[0]:g}_{args.cone[:3]}"
                          + ("_mccd" if args.multiccd else ""))
 GRAVITY_JACK = (0.0, 0.0, 9.81)  # world -Z seen from the flipped port_1 frame
 SOLREF_MODE_RAW = 1  # newton/_src/solvers/mujoco/constants.py
@@ -77,7 +83,14 @@ def _shape_cfg(density: float) -> newton.ModelBuilder.ShapeConfig:
     return newton.ModelBuilder.ShapeConfig(
         density=density, mu=args.friction, restitution=0.0, mu_torsional=0.0, mu_rolling=0.0, margin=0.0,
         gap=args.gap if args.contacts == "newton" else 0.0,
+        **(HYDRO_CFG if args.hydro else {}),
     )
+
+
+# Hydroelastic: SDF on every collider (primitives via the shape config, meshes via Mesh.build_sdf), narrow band
+# covering the detection gap outside and half a wall/latch thickness inside.
+SDF_BAND = (-0.5e-3, max(args.gap, 0.5e-3) + 0.5e-3)
+HYDRO_CFG = dict(is_hydroelastic=True, kh=args.kh, sdf_target_voxel_size=args.sdf_voxel, sdf_narrow_band_range=SDF_BAND)
 
 
 def _mj_attrs() -> dict:
@@ -105,6 +118,12 @@ def _add_prism(b: newton.ModelBuilder, pts, cfg, label: str) -> int:
         a, bb, c, d = _PRISM_FACES[4 * f : 4 * f + 4]
         tris += [a, bb, c, a, c, d]
     mesh = newton.Mesh(np.asarray(pts, np.float32), np.asarray(tris, np.int32))
+    if args.hydro:
+        mesh.build_sdf(target_voxel_size=args.sdf_voxel, narrow_band_range=SDF_BAND, margin=args.gap)
+        mcfg = newton.ModelBuilder.ShapeConfig(**{k: getattr(cfg, k) for k in ("density", "mu", "restitution",
+                                               "mu_torsional", "mu_rolling", "margin", "gap")}, is_hydroelastic=True,
+                                               kh=args.kh)  # fmt: skip
+        return b.add_shape_mesh(-1, mesh=mesh, cfg=mcfg, label=label, custom_attributes=_mj_attrs())
     return b.add_shape_convex_hull(-1, mesh=mesh, cfg=cfg, label=label, custom_attributes=_mj_attrs())
 
 
@@ -197,7 +216,13 @@ def run_tier(tier: str, full: Probe) -> tuple[Probe, float, int, dict]:
     # Sensor buffer: MuJoCo's active contacts with their solved forces (update_contacts), for either collision path.
     contacts = newton.Contacts(solver.get_max_contact_count(), 0,
                                requested_attributes=model.get_requested_contact_attributes())  # fmt: skip
-    pipeline = newton.CollisionPipeline(model) if args.contacts == "newton" else None
+    if args.hydro:
+        from newton.geometry import HydroelasticSDF
+
+        pipeline = newton.CollisionPipeline(model, reduce_contacts=True, broad_phase="explicit",
+                                            sdf_hydroelastic_config=HydroelasticSDF.Config())  # fmt: skip
+    else:
+        pipeline = newton.CollisionPipeline(model) if args.contacts == "newton" else None
     nw_contacts = pipeline.contacts() if pipeline else None
     state, control = model.state(), model.control()
     q_t = wp.to_torch(state.joint_q).view(n, ndof)
@@ -272,7 +297,9 @@ def main():
               "iterations": args.iterations, "ls_iterations": args.ls_iterations, "cone": args.cone,
               "impratio": args.impratio, "condim": args.condim, "multiccd": args.multiccd,
               "latch_armature": args.latch_armature, "contacts": args.contacts,
-              "gap_m": args.gap if args.contacts == "newton" else 0.0, "friction": args.friction, "cuda_graph": not args.no_graph}  # fmt: skip
+              "gap_m": args.gap if args.contacts == "newton" else 0.0,
+              "hydroelastic": args.hydro, "kh": args.kh if args.hydro else None,
+              "sdf_voxel_m": args.sdf_voxel if args.hydro else None, "friction": args.friction, "cuda_graph": not args.no_graph}  # fmt: skip
     # wall time per simulated second for one model holding every tier's worlds is not measurable on MuJoCo-Warp;
     # report the sum over tiers (sequential models), i.e. comparable to PhysX's single all-tier scene.
     full.save(args.out / RUN_ID, RUN_ID, config, steps / max(t_wall, 1e-9), args.seeds,

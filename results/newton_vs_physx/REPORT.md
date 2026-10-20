@@ -27,6 +27,23 @@ Newton ships its own RJ45 example (`python -m newton.examples contacts_rj45_plug
 a simulated cable, and the plug dragged by hand. Its latch spring (0.15 N·m/rad) is close to our beam estimate
 (0.168). It has no scripted insertion or force readout, so it is a qualitative reference only.
 
+## Headline
+
+**With NVIDIA's recommended contact-rich settings (Newton's collision pipeline feeding MuJoCo-Warp, `impratio`
+1000, as in Newton's `example_robot_panda_hydro` and NVIDIA's contact-rich manipulation blog), Newton reproduces
+PatchBench's PhysX results.** The latch signature, the jam statistics and the clearance-tier ranking all transfer:
+
+| latch rate, 60 insertions per tier | loose | medium | spec |
+|---|---|---|---|
+| PhysX TGS 32 it | 0.92 | 0.73 | 0.67 |
+| Newton 1.5, Newton collision, `impratio` 1000, 8 substeps | 0.87 | 0.67 | 0.68 |
+
+Per variant (tier × offset × tilt, 5 seeds each), 23 of 36 variants have identical latch rates and the mean absolute
+difference is 0.12. Both engines jam once the plug lands outside the 0.5 mm lead-in, and both slide the plug in when
+friction is 0 (the control, [friction/](friction/)). Where PhysX still leads on this probe: 0 vs 5 explosions in 180
+insertions, a smooth latch trace (Newton's latch still chatters, finding 4), and 1.6× less wall time per simulated
+second at this small scale. Getting here took the four steps in the findings below, and one dead end (hydroelastic).
+
 ## Results
 
 Latch rate over all variants (aligned insertions latch with the signature on every engine and tier):
@@ -34,6 +51,7 @@ Latch rate over all variants (aligned insertions latch with the signature on eve
 | engine | loose | medium | spec | explosions | wall s / sim s |
 |---|---|---|---|---|---|
 | PhysX TGS 32 it | 0.92 | 0.73 | 0.67 | 0 | 4.1 (36 envs, one scene) |
+| **Newton, Newton collision, `impratio` 1000, 8 substeps** | **0.87** | **0.67** | **0.68** | 5 | 6.5 (3 × 12 worlds, sequential) |
 | Newton, MuJoCo collision, 8 substeps | 1.00 | 1.00 | 1.00 | 0 | 5.3 (3 × 12 worlds, sequential) |
 | Newton, Newton collision, 8 substeps | 1.00 | 0.95 | 0.87 | 7 | 5.8 |
 | Newton, MuJoCo collision, 4 substeps | 1.00 | 1.00 | 0.98 | 2 | 2.8 |
@@ -44,6 +62,7 @@ Latch rate at 1 mm offset (the only offset outside the 0.5 mm lead-in on medium 
 | engine | loose | medium | spec |
 |---|---|---|---|
 | PhysX | 0.67 | 0.07 | 0.00 |
+| **Newton, Newton collision, `impratio` 1000** | **0.53** | **0.27** | **0.20** |
 | Newton, MuJoCo collision, 8 substeps | 1.00 | 1.00 | 1.00 |
 | Newton, Newton collision, 8 substeps | 1.00 | 0.80 | 0.47 |
 
@@ -71,8 +90,13 @@ At ≤ 0.5 mm offset the engines agree closely (PhysX loses a few spec/medium se
    lateral push. PhysX's Coulomb friction stops that from μ ≈ 0.35. MuJoCo's soft friction does not: in the contact
    dump the plug creeps 0.7 mm sideways in 0.1 s at 2 N normal load, with the friction force pointing along the
    motion. This holds with multi-point contacts (`multiccd`), a pyramidal cone, `impratio` 10 and 100, and Newton's
-   collision pipeline (which jams more often: spec 1 mm 0.47). For PatchBench this means the clearance-tier ranking
-   (jams rise as clearance shrinks) is much flatter on Newton/MuJoCo than on PhysX.
+   collision pipeline alone (spec 1 mm 0.47). **The fix is both together: Newton's collision pipeline (contact
+   manifolds instead of one point hopping between the corners of a face) and `impratio` 1000 (friction 1000× stiffer
+   than normal in MuJoCo's soft-constraint model).** On the jam variants that combination jams 4/4 like PhysX, while
+   `impratio` 1000 with MuJoCo's own collision still slides 4/4 in. Newton's hydroelastic contact, NVIDIA's model
+   for flat-on-flat contact, did not work at this scale in the time available: with 0.1 mm SDF voxels the 1 mm latch
+   and walls inverted (pressure pulled the plug in) and the plug tunnelled through the 2 mm back wall at
+   `kh` 1e11–1e13 ([hydro/](hydro/)). Thin features need more SDF tuning than we did.
 
 3. **The thin latch needs much stiffer MuJoCo contacts than Arena's defaults.** Arena's USB-C settings
    (`solimp` 0.95…, `solref` 4 ms) make the 0.3 g latch's contact stiffness about 120 N/m at first touch (MuJoCo's
@@ -81,8 +105,8 @@ At ≤ 0.5 mm offset the engines agree closely (PhysX loses a few spec/medium se
    has none.
 
 4. **The latch chatters on Newton.** During deflection the latch angle reverses 87–167 times per insertion on Newton
-   and never on PhysX (aligned, seed 0, all Newton configurations). The axial force dips to −1 to −47 N around the
-   snap; PhysX never goes below 0. More substeps do not remove this consistently (loose: −25 N at 8 substeps,
+   (92–107 with `impratio` 1000) and never on PhysX (aligned, seed 0). The axial force dips to −1 to −47 N around the
+   snap (−2 to −5 N with `impratio` 1000); PhysX never goes below 0. More substeps do not remove this consistently (loose: −25 N at 8 substeps,
    −5.5 N at 4; medium: −0.9 N vs −47 N). Latch and signature metrics still pass, but a policy reading force or
    Present_Load would see this noise.
 
@@ -93,9 +117,11 @@ At ≤ 0.5 mm offset the engines agree closely (PhysX loses a few spec/medium se
 
 ## Recommendation
 
-Keep PhysX as the benchmark engine. It is the engine where jamming, the effect the clearance tiers measure, behaves
-like Coulomb friction. A Newton port of PatchBench (for BAM on Newton) would need either a friction model with real
-stiction or an honest note that jam rates are not comparable across engines. The latch signature transfers.
+PatchBench's contact physics is engine-portable: the same assets and probe give the same tier statistics on PhysX
+and on Newton, provided Newton uses its own collision pipeline and NVIDIA's `impratio` 1000. That is the setting to
+use for a Newton port (with BAM driving the SO-101 on Newton). The headline benchmark stays on PhysX for v0.1
+because the SO-101 USD does not load in Newton yet and PhysX has no explosions or latch chatter on this probe.
+Default MuJoCo settings (one contact point per pair, `impratio` 1) are not suitable for jam-sensitive insertion.
 
 ## Reproduce
 
@@ -105,10 +131,13 @@ T=loose,medium,spec; OUT=results/newton_vs_physx
 flock -o ~/work/.isaac.lock python scripts/check_contact.py --tiers $T --pos_iters 32 --run_id physx_it32_co0.5 --out $OUT
 flock -o ~/work/.isaac.lock python scripts/check_contact_newton.py --tiers $T --substeps 8 --out $OUT
 flock -o ~/work/.isaac.lock python scripts/check_contact_newton.py --tiers $T --substeps 8 --contacts newton --out $OUT
+flock -o ~/work/.isaac.lock python scripts/check_contact_newton.py --tiers $T --substeps 8 --contacts newton --impratio 1000 \
+    --run_id nwc_s8_imp1000 --out $OUT
 flock -o ~/work/.isaac.lock python scripts/check_contact_newton.py --tiers $T --substeps 4 --out $OUT
 flock -o ~/work/.isaac.lock python scripts/check_contact_newton.py --tiers $T --substeps 4 --solref 0.004,1.0 \
     --solimp 0.95,0.999,0.0005,0.5,2.0 --run_id nw_s4_arena_usbc_contacts --out $OUT
 # friction sweep (medium + spec, 1 mm offset): --friction {0,1,2} --offsets_mm 1.0 --tilts_deg 0 --seeds 2
-python scripts/compare_engines.py --plot_first 3 --runs $OUT/physx_it32_co0.5 $OUT/nw_s8_tc0.52_d0.99_ell \
-    $OUT/nwc_nw_s8_tc0.52_d0.99_ell $OUT/nw_s4_tc1_d0.99_ell $OUT/nw_s4_arena_usbc_contacts
+# hydroelastic attempts: --hydro --impratio 1000 --njmax 2000 --nconmax 1000 --kh {1e11,1e12,1e13}
+python scripts/compare_engines.py --plot_first 3 --runs $OUT/physx_it32_co0.5 $OUT/nwc_s8_imp1000 \
+    $OUT/nw_s8_tc0.52_d0.99_ell $OUT/nwc_nw_s8_tc0.52_d0.99_ell $OUT/nw_s4_tc1_d0.99_ell $OUT/nw_s4_arena_usbc_contacts
 ```

@@ -1,0 +1,99 @@
+{
+ "run_id": "hydro_kh1e12",
+ "config": {
+  "engine": "newton",
+  "newton": "1.5.0",
+  "warp": "1.16.0",
+  "solver": "SolverMuJoCo",
+  "dt": 0.0020833333333333333,
+  "substeps": 8,
+  "solref": [
+   0.0005208333333333333,
+   1.0
+  ],
+  "solimp": [
+   0.99,
+   0.999,
+   0.0002,
+   0.5,
+   2.0
+  ],
+  "iterations": 100,
+  "ls_iterations": 50,
+  "cone": "elliptic",
+  "impratio": 1000.0,
+  "condim": 3,
+  "multiccd": false,
+  "latch_armature": 0.0,
+  "contacts": "newton",
+  "gap_m": 0.0005,
+  "hydroelastic": true,
+  "kh": 1000000000000.0,
+  "sdf_voxel_m": 0.0001,
+  "friction": 0.35,
+  "cuda_graph": true
+ },
+ "num_envs": 1,
+ "seeds": 1,
+ "sim_steps_per_s": 70.99995096993216,
+ "explosions": 0,
+ "tunnels": 1,
+ "max_penetration_mm": 9.449981153011322,
+ "aligned": {
+  "medium": {
+   "latch_rate": 0.0,
+   "signature_rate": 0.0,
+   "retained_rate": 0.0,
+   "peak_axial_N": [
+    0.481
+   ],
+   "max_penetration_mm": 9.449981153011322
+  }
+ },
+ "beam_estimate": {
+  "k_tip_N_per_m": 1164.641203703704,
+  "mean_max_deflection_deg": 7.7441333677575726,
+  "beam_tip_force_N": 1.888963595653574,
+  "peak_axial_over_beam_tip_force": 0.25457656484785435
+ },
+ "wall_s_per_sim_s": 6.760568048888874,
+ "per_tier": {
+  "medium": {
+   "njmax": 2000,
+   "naconmax": 1000,
+   "shapes_per_world": 47,
+   "wall_s_per_sim_s": 6.760568048888874,
+   "num_worlds": 1
+  }
+ },
+ "variants": {
+  "medium|0|0": {
+   "latch_rate": 0.0,
+   "retained_rate": 0.0,
+   "signature_rate": 0.0,
+   "peak_axial_N_mean": 0.4808858633041382,
+   "max_penetration_mm": 9.449981153011322,
+   "exploded": 0,
+   "tunnel": 1
+  }
+ },
+ "episodes": [
+  {
+   "tier": "medium",
+   "offset_mm": 0.0,
+   "tilt_deg": 0.0,
+   "seed": 0,
+   "latched": false,
+   "retained": false,
+   "max_deflection_deg": -7.7441333677575726,
+   "peak_axial_N": 0.4808858633041382,
+   "after_snap_min_axial_N": null,
+   "signature": false,
+   "max_penetration_mm": 9.449981153011322,
+   "max_depth_mm": 25.449981912970543,
+   "depth_end_hold_mm": 25.217272341251373,
+   "exploded": false,
+   "tunnel": true
+  }
+ ]
+}
