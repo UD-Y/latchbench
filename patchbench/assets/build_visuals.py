@@ -25,10 +25,14 @@ import numpy as np
 from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, Vt
 from scipy.spatial import ConvexHull
 
-from patchbench.assets.build_assets import TIERS, USD_DIR, RJ45Dims, jack_geometry, jack_parts
+from patchbench.assets.build_assets import TIERS, USD_DIR, RJ45Dims, jack_geometry, jack_parts, plate_parts
 
 LOOK_DIR = USD_DIR / "look"
 MM = 1e-3
+PANEL_HEIGHT = 0.05
+"""m, nominal panel frame height above the table (objects.PANEL_POS[2]); the switch chassis reaches the table there."""
+CHASSIS_DEPTH, FOOT_H = 0.10, 0.006
+"""m: switch housing depth behind the faceplate; rubber foot height."""
 
 # T568B pin order 1..8: (base colour, striped with white)
 T568B = [("orange", True), ("orange", False), ("green", True), ("blue", False),
@@ -45,6 +49,8 @@ MATERIALS = {
     "black_pbt": ((0.025, 0.025, 0.028), 0.55, 0.0, 1.0, 1.5, None),  # jack housing
     "nickel": ((0.78, 0.77, 0.74), 0.28, 1.0, 1.0, 1.5, None),
     "anodised": ((0.06, 0.065, 0.075), 0.45, 0.3, 1.0, 1.5, None),  # faceplate
+    "chassis": ((0.20, 0.21, 0.23), 0.38, 0.75, 1.0, 1.5, None),  # switch housing, brushed steel
+    "rubber": ((0.02, 0.02, 0.02), 0.9, 0.0, 1.0, 1.5, None),
     "led_green": ((0.05, 0.9, 0.2), 0.2, 0.0, 1.0, 1.5, (0.1, 4.0, 0.6)),
     "led_amber": ((1.0, 0.55, 0.05), 0.2, 0.0, 1.0, 1.5, (4.0, 1.8, 0.1)),
     **{f"wire_{c}": (rgb, 0.45, 0.0, 1.0, 1.5, None) for c, rgb in WIRE_RGB.items()},
@@ -261,13 +267,13 @@ def build_plug_look(d: RJ45Dims = RJ45Dims()) -> Path:
         path = np.stack([xs, y0 + (y1 - y0) * f, z0 + (z1 - z0) * f], 1)
         _mesh(stage, f"{v}/wire_{i + 1}", sweep(path, 0.45 * MM, k=12),
               mats[f"wire_{col}_white" if striped else f"wire_{col}"])  # fmt: skip
-    # boot: rounded-rectangle sleeve over the plug's rear 8 mm, tapering to the jacket
-    xs = np.linspace(-L + 8 * MM, -L - 14 * MM, 40)
-    f = np.clip((-L + 8 * MM - xs) / (22 * MM), 0, 1)
-    g = np.clip((f - 0.25) / 0.75, 0, 1) ** 0.8
+    # boot: squared sleeve (superellipse exponent 6, encloses the shell's rounded corners) over the plug's rear
+    # 8 mm, tapering behind the plug to the jacket
+    xs = np.linspace(-L + 8 * MM, -L - 14 * MM, 44)
+    g = np.clip((-L - xs) / (14 * MM), 0, 1) ** 0.8
     bw = (hw + 0.7 * MM) * (1 - g) + 3.45 * MM * g
     bh = (hh + 0.7 * MM) * (1 - g) + 3.45 * MM * g
-    _mesh(stage, f"{v}/boot", sweep(np.stack([xs, 0 * xs, 0 * xs], 1), bw, bh, 4.0 * (1 - g) + 2.0 * g, k=48),
+    _mesh(stage, f"{v}/boot", sweep(np.stack([xs, 0 * xs, 0 * xs], 1), bw, bh, 6.0 * (1 - g) + 2.0 * g, k=64),
           mats["boot_tpu"])  # fmt: skip
     # jacket (static default pose; video scripts rewrite these points per frame)
     _mesh(stage, "/Plug/body/look/cable", sweep(cable_path(d), 3.0 * MM, k=32), mats["jacket_pvc"])
@@ -325,6 +331,27 @@ def build_panel_look(tier: str, d: RJ45Dims = RJ45Dims()) -> Path:
             _mesh(stage, f"{v}/led_{k}", rounded_box((-0.2 * MM, dy - 1.0 * MM, z - 0.6 * MM),
                                                      (0.0, dy + 1.0 * MM, z + 0.6 * MM), 0.15 * MM, seg=2),
                   mats[mat])  # fmt: skip
+    # switch housing behind the faceplate (panel frame: x into the wall, z up), on rubber feet down to the table at
+    # the nominal panel height; vent slots on top. Encloses the jack bodies and the env's (invisible) stand collider.
+    plate = np.array([[*lo, *hi] for _, _, lo, hi, _ in plate_parts(d, g)])
+    t = d.plate_thickness
+    y0, y1 = plate[:, 1].min(), plate[:, 4].max()
+    z_top = plate[:, 5].max()
+    z_bot = -PANEL_HEIGHT + FOOT_H
+    UsdGeom.Xform.Define(stage, "/Panel/look_chassis")
+    _mesh(stage, "/Panel/look_chassis/body", rounded_box((t, y0, z_bot), (t + CHASSIS_DEPTH, y1, z_top), 1.0 * MM),
+          mats["chassis"])  # fmt: skip
+    for k, (fx, fy) in enumerate(((t + 0.012, y0 + 0.008), (t + 0.012, y1 - 0.008), (t + CHASSIS_DEPTH - 0.012, y0 + 0.008),
+                                  (t + CHASSIS_DEPTH - 0.012, y1 - 0.008))):  # fmt: skip
+        _mesh(stage, f"/Panel/look_chassis/foot_{k}", rounded_box((fx - 4 * MM, fy - 4 * MM, -PANEL_HEIGHT),
+                                                                   (fx + 4 * MM, fy + 4 * MM, z_bot + 0.5 * MM), 1.5 * MM),
+              mats["rubber"])  # fmt: skip
+    n_vent = 9
+    for k in range(n_vent):
+        x = t + 0.025 + k * (CHASSIS_DEPTH - 0.04) / (n_vent - 1)
+        _mesh(stage, f"/Panel/look_chassis/vent_{k}", _box_geo((x - 1.0 * MM, y0 + 0.010, z_top),
+                                                                (x + 1.0 * MM, y1 - 0.010, z_top + 0.15 * MM)),
+              mats["black_pbt"])  # fmt: skip
     stage.GetRootLayer().Save()
     return out
 

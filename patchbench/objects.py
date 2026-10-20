@@ -293,6 +293,7 @@ if HAVE_ISAAC:
         def __init__(self, instance_name: str | None = None, size=(0.02, 0.06, 0.03), **kwargs):
             spawner = sim_utils.CuboidCfg(
                 size=tuple(size),
+                visible=not LOOK,  # with the look layers the panel's switch housing covers it (collider stays)
                 visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.35, 0.35, 0.38)),
                 collision_props=sim_utils.CollisionPropertiesCfg(),
                 rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),

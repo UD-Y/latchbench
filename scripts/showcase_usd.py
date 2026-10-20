@@ -134,15 +134,7 @@ def main():
     panel = UsdGeom.Xform.Define(stage, "/World/Panel")
     panel.GetPrim().GetReferences().AddReference(str(USD_DIR / "look" / f"panel_3port_{d['tier']}_look.usd"))
     panel.AddTransformOp().Set(Gf.Matrix4d(np.asarray(d["panel_w"], float).T.tolist()))
-    # stand under the panel, down to the table
-    pz = float(d["panel_w"][2, 3])
-    stand = UsdGeom.Cube.Define(stage, "/World/PanelStand")
-    stand.CreateSizeAttr(1.0)
-    sx = UsdGeom.Xformable(stand)
-    centre = np.asarray(d["panel_w"])[:3, :3] @ [DIMS.seat_depth / 2, 0.0, 0.0] + np.asarray(d["panel_w"])[:3, 3]
-    sx.AddTranslateOp().Set(Gf.Vec3d(float(centre[0]), float(centre[1]), (pz - 0.012) / 2))
-    sx.AddScaleOp().Set(Gf.Vec3d(0.02, 0.07, max(pz - 0.012, 0.005)))
-    UsdShade.MaterialBindingAPI.Apply(stand.GetPrim()).Bind(preview(stage, "/World/Looks/stand", (0.12, 0.12, 0.13), 0.5, 0.6))
+    # the panel look's switch housing stands on the table (build_visuals.PANEL_HEIGHT)
 
     # cable: tube along the rod (boot end + body centres), constant topology, points per frame
     pts0, counts, idx, _ = sweep(np.r_[[BOOT_END], cab[0][:, :3]], 3.0e-3, k=24)
