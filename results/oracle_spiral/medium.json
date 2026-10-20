@@ -1,0 +1,31 @@
+{
+ "policy": "oracle_spiral",
+ "tier": "medium",
+ "n": 200,
+ "seed": 0,
+ "funnel": {
+  "reached": 1.0,
+  "contacted": 0.995,
+  "aligned": 0.72,
+  "seated": 0.72,
+  "latched": 0.72
+ },
+ "success": 0.72,
+ "ci95": [
+  0.6541,
+  0.7776
+ ],
+ "mean_time_to_latch_s": 6.923,
+ "wrong_port": 0.0,
+ "overload_events": 0.0,
+ "git_sha": "1af87db+dirty",
+ "so101_contact_version": "0.1.0",
+ "physics": "physx",
+ "mean_peak_axial_force_n": 4.123,
+ "pose_noise_mm": 1.0,
+ "num_envs": 32,
+ "port": "random",
+ "cameras": false,
+ "wall_time_s": 485.2,
+ "sim_steps": 2871
+}

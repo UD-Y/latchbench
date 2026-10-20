@@ -1,0 +1,31 @@
+{
+ "policy": "telemetry_spiral",
+ "tier": "loose",
+ "n": 200,
+ "seed": 0,
+ "funnel": {
+  "reached": 1.0,
+  "contacted": 0.95,
+  "aligned": 0.815,
+  "seated": 0.815,
+  "latched": 0.815
+ },
+ "success": 0.815,
+ "ci95": [
+  0.7554,
+  0.8627
+ ],
+ "mean_time_to_latch_s": 6.897,
+ "wrong_port": 0.0,
+ "overload_events": 0.0,
+ "git_sha": "1af87db+dirty",
+ "so101_contact_version": "0.1.0",
+ "physics": "physx",
+ "mean_peak_axial_force_n": 2.452,
+ "pose_noise_mm": 1.0,
+ "num_envs": 32,
+ "port": "random",
+ "cameras": false,
+ "wall_time_s": 409.6,
+ "sim_steps": 3073
+}

@@ -1,31 +1,31 @@
 {
  "policy": "open_loop",
  "tier": "loose",
- "n": 16,
+ "n": 200,
  "seed": 0,
  "funnel": {
-  "reached": 0.75,
-  "contacted": 0.75,
-  "aligned": 0.3125,
-  "seated": 0.3125,
-  "latched": 0.3125
+  "reached": 1.0,
+  "contacted": 1.0,
+  "aligned": 0.35,
+  "seated": 0.35,
+  "latched": 0.35
  },
- "success": 0.3125,
+ "success": 0.35,
  "ci95": [
-  0.1416,
-  0.556
+  0.2873,
+  0.4184
  ],
- "mean_time_to_latch_s": 6.52,
+ "mean_time_to_latch_s": 5.411,
  "wrong_port": 0.0,
  "overload_events": 0.0,
- "git_sha": "1126e8c+dirty",
+ "git_sha": "1af87db+dirty",
  "so101_contact_version": "0.1.0",
  "physics": "physx",
- "mean_peak_axial_force_n": 1.799,
+ "mean_peak_axial_force_n": 2.585,
  "pose_noise_mm": 1.0,
- "num_envs": 16,
+ "num_envs": 32,
  "port": "random",
  "cameras": false,
- "wall_time_s": 71.6,
- "sim_steps": 600
+ "wall_time_s": 467.5,
+ "sim_steps": 3756
 }

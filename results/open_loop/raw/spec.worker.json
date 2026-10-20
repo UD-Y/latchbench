@@ -1,0 +1,19 @@
+{
+ "policy": "open_loop",
+ "name": "open_loop",
+ "tier": "spec",
+ "n": 200,
+ "num_envs": 32,
+ "seed": 0,
+ "pose_noise_mm": 1.0,
+ "port": "random",
+ "enable_cameras": false,
+ "endpoint": "tcp://127.0.0.1:5555",
+ "n_action_steps": null,
+ "env_args": [],
+ "policy_args": [],
+ "env_name": null,
+ "arena_policy": null,
+ "jsonl": "/home/ud/work/patchbench/results/open_loop/raw/spec.jsonl",
+ "meta": "/home/ud/work/patchbench/results/open_loop/raw/spec.meta.json"
+}
