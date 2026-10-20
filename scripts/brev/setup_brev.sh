@@ -51,7 +51,7 @@ for d in "$WORK/so101-contact" "$WORK/patchbench"; do
 done
 
 step "apt packages"
-APT_PKGS=(libglu1-mesa libxt6 ffmpeg tmux git git-lfs rsync curl build-essential)
+APT_PKGS=(libglu1-mesa libxt6 ffmpeg tmux git git-lfs rsync curl build-essential cmake)  # cmake: egl-probe (robomimic) builds from source
 missing=()
 for p in "${APT_PKGS[@]}"; do dpkg -s "$p" >/dev/null 2>&1 || missing+=("$p"); done
 if ((${#missing[@]})); then
@@ -73,7 +73,7 @@ export GIT_LFS_SKIP_SMUDGE=1   # Arena's LFS files are docs images and test data
 if [[ ! -d "$ARENA/.git" ]]; then
   git clone --filter=blob:none --no-checkout https://github.com/isaac-sim/IsaacLab-Arena.git "$ARENA"
 fi
-if [[ "$(git -C "$ARENA" rev-parse HEAD 2>/dev/null || true)" != "$ARENA_REV" ]]; then
+if [[ "$(git -C "$ARENA" rev-parse HEAD 2>/dev/null || true)" != "$ARENA_REV" || ! -f "$ARENA/pyproject.toml" ]]; then
   git -C "$ARENA" fetch -q origin "$ARENA_REV" || true
   git -C "$ARENA" checkout -q "$ARENA_REV"
   FORCE_SYNC=true
@@ -94,7 +94,8 @@ step "isaaclab-so101 @ ${SO101_REV:0:7}"
 if [[ ! -d "$SO101/.git" ]]; then
   git clone --filter=blob:none --no-checkout https://github.com/art-e-fact/isaaclab-so101.git "$SO101"
 fi
-if [[ "$(git -C "$SO101" rev-parse HEAD 2>/dev/null || true)" != "$SO101_REV" ]]; then
+# --no-checkout clone: also check out when upstream HEAD already equals the pin (working tree is still empty).
+if [[ "$(git -C "$SO101" rev-parse HEAD 2>/dev/null || true)" != "$SO101_REV" || ! -f "$SO101/pyproject.toml" ]]; then
   git -C "$SO101" fetch -q origin "$SO101_REV" || true
   git -C "$SO101" checkout -q "$SO101_REV"
 fi

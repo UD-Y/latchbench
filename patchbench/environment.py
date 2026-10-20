@@ -258,6 +258,12 @@ class RJ45PanelEnv(ExampleEnvironmentBase):
         if args_cli.enable_cameras:
             for cam in (embodiment.camera_config.camera_ego, embodiment.camera_config.external_camera):
                 cam.height, cam.width = args_cli.camera_height, args_cli.camera_width
+                # Render-only camera quality (no physics effect). Kit's camera default is DLSS (temporal upscaling);
+                # Isaac Lab's visuomotor tasks use DLAA (native resolution) for policy cameras.
+                if args_cli.cam_aa != "kit":
+                    cam.renderer_cfg.global_settings.antialiasing_mode = args_cli.cam_aa
+                if args_cli.cam_f_stop >= 0:  # 0 = depth of field off (PinholeCameraCfg)
+                    cam.spawn.f_stop = args_cli.cam_f_stop
             embodiment.set_external_camera_view(FRONT_CAMERA_EYE, FRONT_CAMERA_TARGET)
 
         def env_cfg_callback(env_cfg):
@@ -296,3 +302,9 @@ class RJ45PanelEnv(ExampleEnvironmentBase):
                             help="real: render-only look layers (usd/look) + trailing cable with cameras; physics identical")
         parser.add_argument("--camera_height", type=int, default=480)
         parser.add_argument("--camera_width", type=int, default=640)
+        # Defaults from the Brev A/B (20 Oct, results/datagen_v0/brev_ab_blur.png): the embodiment's f-stops gave visible
+        # depth-of-field blur on the arm and switch; f-stop 0 + DLAA is sharp at ~the same datagen throughput.
+        parser.add_argument("--cam_aa", choices=["kit", "DLSS", "DLAA", "TAA", "FXAA", "Off"], default="DLAA",
+                            help="camera anti-aliasing (render-only); kit = Kit default (DLSS)")
+        parser.add_argument("--cam_f_stop", type=float, default=0.0,
+                            help="both cameras' f-stop (render-only); 0 = no depth of field, <0 = embodiment default")

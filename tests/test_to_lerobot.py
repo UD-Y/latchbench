@@ -71,3 +71,23 @@ def test_convert_and_load(tmp_path):
     # Second run reuses the complete dataset.
     out2 = subprocess.run(cmd + ["--no_check"], check=True, capture_output=True, text=True).stdout
     assert "skipped" in out2
+
+
+def test_state_with_load(tmp_path):
+    """--state_with_load: observation.state = 6 positions + 6 signed Present_Load counts, positions first."""
+    from lerobot.datasets.lerobot_dataset import LeRobotDataset
+
+    raw, root, repo = tmp_path / "raw", tmp_path / "ds", "local/patchbench-test-load"
+    make_synthetic(raw, n=2, failed=0)
+    cmd = [sys.executable, str(SCRIPT), "--raw", str(raw), "--repo_id", repo, "--root", str(root),
+           "--state_with_load", "--no_check"]
+    subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+    ds = LeRobotDataset(repo, root=root)
+    names = ds.features["observation.state"]["names"]
+    assert len(names) == 12 and names[0] == "shoulder_pan.pos" and names[6] == "shoulder_pan.load"
+    item = ds[T + 3]
+    second = rf.read_episode(raw / "episodes" / "ep_000001.npz")
+    np.testing.assert_allclose(item["observation.state"][:6].numpy(), second.state[3], rtol=0, atol=1e-5)
+    np.testing.assert_array_equal(item["observation.state"][6:].numpy(), second.servo_load[3].astype(np.float32))
+    np.testing.assert_array_equal(item["observation.servo_load"].numpy(), second.servo_load[3])

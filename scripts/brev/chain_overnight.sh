@@ -20,7 +20,10 @@
 # Knobs (environment variables; defaults in brackets):
 #   EPISODES_PER_PORT [150]  DATAGEN_TIERS [loose,medium]  DATAGEN_NUM_ENVS [8]  IMG_H/IMG_W [480/640]
 #   SWEEP_N [200]  SWEEP_TIERS [loose,medium,spec]  SWEEP_NUM_ENVS [64]  SWEEP_POSE_NOISE_MM [1]
-#   EXPERT_CONTROLLER [policy default: open_loop | oracle_spiral | telemetry_spiral]
+#   EXPERT_CONTROLLER [policy default: open_loop | oracle_spiral | telemetry_spiral]  EXPERT_POSE_NOISE_MM [policy default 0]
+#   STATE_WITH_LOAD [0; 1 = observation.state = 6 positions + 6 Present_Load, to_lerobot.py --state_with_load]
+#   A second dataset/model next to v0: DATASET_NAME [patchbench-so101-v0]  MODEL_NAME [patchbench-groot-n17]
+#   RAW [~/data/raw/patchbench_v0]  GROOT_RUN [groot_patchbench]  STATE_DIR [~/out/chain_state]
 #   GROOT_STEPS [6000]  GROOT_BATCH [32]  NO_POWEROFF [0]  SKIP_STAGES (e.g. "1,4")  VCODEC [libsvtav1]
 # Time-estimate inputs (measure them on the L40S: gen_data prints env-frames/s, to_lerobot prints frames/s):
 #   DATAGEN_FPS [60, placeholder]  EP_SECONDS [6]  FAIL_SECONDS [20]  DATAGEN_SUCCESS [0.5]  ENCODE_FPS [60, placeholder]
@@ -72,14 +75,15 @@ GROOT_SEC_PER_STEP="${GROOT_SEC_PER_STEP:-0.6}"
 STARTUP_S="${STARTUP_S:-120}"
 
 HF_USER="${HF_USER:-}"
-DATASET_REPO="${HF_USER:-HF_USER}/patchbench-so101-v0"
-MODEL_REPO="${HF_USER:-HF_USER}/patchbench-groot-n17"
+DATASET_REPO="${HF_USER:-HF_USER}/${DATASET_NAME:-patchbench-so101-v0}"
+MODEL_REPO="${HF_USER:-HF_USER}/${MODEL_NAME:-patchbench-groot-n17}"
 RAW="${RAW:-$HOME/data/raw/patchbench_v0}"
 export HF_LEROBOT_HOME="${HF_LEROBOT_HOME:-$HOME/.cache/huggingface/lerobot}"
 DATASET_ROOT="$HF_LEROBOT_HOME/$DATASET_REPO"
-GROOT_OUT="$WORK/outputs/groot_patchbench"   # CLAUDE.md section 10 uses outputs/groot_patchbench, run from $WORK
+GROOT_RUN="${GROOT_RUN:-groot_patchbench}"
+GROOT_OUT="$WORK/outputs/$GROOT_RUN"   # CLAUDE.md section 10 uses outputs/groot_patchbench, run from $WORK
 RESULTS="$PB/results"
-STATE="$HOME/out/chain_state"                  # stage markers
+STATE="${STATE_DIR:-$HOME/out/chain_state}"    # stage markers
 TS="$(date +%Y%m%d_%H%M%S)"
 IFS=, read -r -a TIER_LIST <<< "$DATAGEN_TIERS"
 IFS=, read -r -a SWEEP_TIER_LIST <<< "$SWEEP_TIERS"
@@ -214,14 +218,15 @@ stage_gen_data() {
   cd "$PB"
   flock -o "$ISAAC_LOCK" "$ARENA_PY" scripts/gen_data.py --tiers "$DATAGEN_TIERS" \
     --episodes_per_port "$EPISODES_PER_PORT" --num_envs "$DATAGEN_NUM_ENVS" --height "$IMG_H" --width "$IMG_W" \
-    --out "$RAW" ${EXPERT_CONTROLLER:+--expert_controller "$EXPERT_CONTROLLER"}  # expert pose_noise_mm defaults to 0
+    --out "$RAW" ${EXPERT_CONTROLLER:+--expert_controller "$EXPERT_CONTROLLER"} \
+    ${EXPERT_POSE_NOISE_MM:+--pose_noise_mm "$EXPERT_POSE_NOISE_MM"}  # expert pose_noise_mm defaults to 0
 }
 
 stage_to_lerobot() {
   if [[ -f "$STATE/dataset_pushed" ]]; then log "to_lerobot: already pushed; skipped"; return 0; fi
   cd "$PB"
   "$LEROBOT_VENV/bin/python" scripts/to_lerobot.py --raw "$RAW" --repo_id "$DATASET_REPO" --root "$DATASET_ROOT" \
-    --vcodec "$VCODEC" --push
+    --vcodec "$VCODEC" --push $([[ "${STATE_WITH_LOAD:-0}" == 1 ]] && echo --state_with_load)
   touch "$STATE/dataset_pushed"
 }
 
@@ -254,7 +259,7 @@ stage_groot() {
     --policy.base_model_path=nvidia/GR00T-N1.7-3B --policy.embodiment_tag=new_embodiment \
     --policy.chunk_size=16 --policy.n_action_steps=16 --policy.use_relative_actions=true \
     --policy.relative_exclude_joints='["gripper"]' --policy.use_bf16=true \
-    --batch_size="$GROOT_BATCH" --steps="$GROOT_STEPS" --save_freq=2000 --output_dir=outputs/groot_patchbench \
+    --batch_size="$GROOT_BATCH" --steps="$GROOT_STEPS" --save_freq=2000 --output_dir="outputs/$GROOT_RUN" \
     --policy.push_to_hub=true --policy.repo_id="$MODEL_REPO" "${resume[@]}"
   touch "$STATE/groot_done"
 }

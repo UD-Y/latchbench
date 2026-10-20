@@ -1,0 +1,31 @@
+{
+ "policy": "open_loop",
+ "tier": "loose",
+ "n": 16,
+ "seed": 0,
+ "funnel": {
+  "reached": 1.0,
+  "contacted": 1.0,
+  "aligned": 0.4375,
+  "seated": 0.4375,
+  "latched": 0.4375
+ },
+ "success": 0.4375,
+ "ci95": [
+  0.231,
+  0.6682
+ ],
+ "mean_time_to_latch_s": 5.281,
+ "wrong_port": 0.0,
+ "overload_events": 0.0,
+ "git_sha": "dede52a+dirty",
+ "so101_contact_version": "0.1.0",
+ "physics": "physx",
+ "mean_peak_axial_force_n": 1.501,
+ "pose_noise_mm": 1.0,
+ "num_envs": 16,
+ "port": "random",
+ "cameras": true,
+ "wall_time_s": 183.9,
+ "sim_steps": 600
+}

@@ -93,7 +93,12 @@ def main():
     # robot: Menagerie visual meshes (same MJCF and body order as the sim model)
     b = newton.ModelBuilder()
     newton.solvers.SolverMuJoCo.register_custom_attributes(b)
-    b.add_mjcf(str(d["so101_xml"]), floating=False)
+    xml = Path(str(d["so101_xml"]))
+    if not xml.exists():  # npz recorded on another machine: fetch the same pinned Menagerie folder here
+        from newton._src.utils.download_assets import MENAGERIE_REF, MENAGERIE_URL, download_git_folder
+
+        xml = download_git_folder(MENAGERIE_URL, "robotstudio_so101", ref=MENAGERIE_REF) / "so101.xml"
+    b.add_mjcf(str(xml), floating=False)
     m = b.finalize(device="cpu")
     colors, mats = m.shape_color.numpy(), {}
     for i, lab in enumerate(m.shape_label):

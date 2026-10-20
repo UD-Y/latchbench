@@ -58,6 +58,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--server_device", default="cuda")
     ap.add_argument("--no_server", action="store_true", help="lerobot: connect to an already running server")
     ap.add_argument("--no_leaderboard", action="store_true")
+    ap.add_argument("--save_frames_every", type=int, default=0,
+                    help="every k steps save a JPEG grid of all envs' front cameras to <out>/<name>/frames_<tier>/ "
+                         "(needs cameras: forced on for lerobot, --enable_cameras for scripted policies)")
     ap.add_argument("--dry_run", action="store_true")
     ap.add_argument("--env_arg", action="append", default=[],
                     help="extra env flag passed after the env name, e.g. --env_arg=--foo=1 (repeatable)")
@@ -68,10 +71,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--_env", default=None, help=argparse.SUPPRESS)
     ap.add_argument("--_arena_policy", default=None, help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
+    if args._worker:  # the worker reads everything from its JSON config
+        return args
     if args.policy == "lerobot":
         if not args.policy_path:
             ap.error("--policy lerobot needs --policy.path")
         args.enable_cameras = True
+    if args.save_frames_every and not args.enable_cameras:
+        ap.error("--save_frames_every needs --enable_cameras")
     if args.pose_noise_mm is None:
         args.pose_noise_mm = 0.0 if args.policy == "expert" else 1.0
     args.tiers = [t for t in args.tiers.split(",") if t]
@@ -103,6 +110,8 @@ def worker_config(args: argparse.Namespace, tier: str) -> dict:
         "enable_cameras": args.enable_cameras,
         "endpoint": args.endpoint,
         "n_action_steps": args.n_action_steps,
+        "save_frames_every": args.save_frames_every,
+        "frames_dir": str(Path(args.out) / args.name / f"frames_{tier}"),
         "env_args": list(args.env_arg),
         "policy_args": list(args.policy_arg),
         "env_name": args._env,
@@ -295,6 +304,8 @@ def worker(cfg: dict) -> None:
             from isaaclab_arena.evaluation.policy_runner_cli import build_policy_from_cli
 
             policy = build_policy_from_cli(policy_cls, args_cli)
+            if cfg.get("save_frames_every"):
+                policy = _with_frame_grid(policy, cfg)
         else:
             policy = _make_remote_lerobot_policy(cfg, device=env.unwrapped.device)
 
@@ -375,6 +386,52 @@ def _record_stage_summary(env, env_id: int) -> dict:
     return {k: (None if isinstance(v, float) and v != v else v) for k, v in out.items()}
 
 
+class FrameGrid:
+    """Every ``every`` calls: (B, H, W, 3) front images -> one JPEG grid at half resolution, ``<out_dir>/<step>.jpg``."""
+
+    def __init__(self, every: int, out_dir: str):
+        self.every, self.out_dir, self.step = every, Path(out_dir), -1
+
+    def __call__(self, front) -> None:
+        import numpy as np
+        from PIL import Image
+
+        self.step += 1
+        if self.every <= 0 or self.step % self.every:
+            return
+        img = front[..., :3]
+        if img.dtype != np.uint8:
+            img = (np.clip(img, 0, 1) * 255 + 0.5).astype(np.uint8)
+        img = img[:, ::2, ::2]
+        b, h, w, _ = img.shape
+        cols = int(np.ceil(np.sqrt(b)))
+        rows = int(np.ceil(b / cols))
+        grid = np.zeros((rows * h, cols * w, 3), np.uint8)
+        for i in range(b):
+            grid[(i // cols) * h:(i // cols + 1) * h, (i % cols) * w:(i % cols + 1) * w] = img[i]
+        self.out_dir.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(grid).save(self.out_dir / f"{self.step:05d}.jpg", quality=85)
+
+
+def _with_frame_grid(policy, cfg: dict):
+    """Scripted policies: save the front camera grid (same camera term as gen_data.py) before each action."""
+    grid = FrameGrid(cfg["save_frames_every"], cfg["frames_dir"])
+    inner, key = policy.get_action, []
+
+    def get_action(env, observation):
+        flat = dict(_flatten(observation))
+        if not key:
+            cand = [k for k, v in flat.items() if getattr(v, "ndim", 0) == 4 and k.rsplit(".", 1)[-1] == "external_camera_rgb"]
+            assert cand, f"no external_camera_rgb in obs keys {sorted(flat)} (cameras enabled?)"
+            key.append(cand[0])
+            print(f"[evaluate] frame grid from {key[0]}", flush=True)
+        grid(flat[key[0]].detach().cpu().numpy())
+        return inner(env, observation)
+
+    policy.get_action = get_action
+    return policy
+
+
 def _flatten(d, prefix=""):
     for k, v in d.items():
         key = f"{prefix}{k}"
@@ -404,28 +461,40 @@ def _make_remote_lerobot_policy(cfg: dict, device):
             self.client = PolicyClient(cfg["endpoint"], n_action_steps=cfg["n_action_steps"])
             print(f"[evaluate] connected to policy server: {self.client.info}", flush=True)
             self.keys = None
+            self.grid = FrameGrid(cfg.get("save_frames_every") or 0, cfg["frames_dir"])
 
         def _resolve(self, flat):
             state = next((k for k in ("policy.joint_pos", "policy.joint_positions", "joint_pos") if k in flat), None)
             assert state is not None, f"no joint_pos in obs keys {sorted(flat)}"
+            load = None
+            if int(self.client.info.get("state_dim", 6)) == 12:  # checkpoint trained with --state_with_load
+                load = next((k for k in ("policy.servo_load", "servo_load") if k in flat), None)
+                assert load is not None, f"state_dim 12 needs servo_load in obs keys {sorted(flat)}"
             imgs = {}
+            # same camera terms as gen_data.py --front_key / --wrist_key (what the dataset's front/wrist videos hold)
+            terms = {"front": "external_camera_rgb", "wrist": "camera_ego_rgb"}
             for cam in IMAGE_KEYS:
                 short = cam.rsplit(".", 1)[-1]
-                cand = [k for k, v in flat.items() if short in k and getattr(v, "ndim", 0) == 4]
+                cand = [k for k, v in flat.items() if getattr(v, "ndim", 0) == 4
+                        and (k.rsplit(".", 1)[-1] == terms.get(short) or short in k)]
                 assert cand, f"no {short} image in obs keys {sorted(flat)} (cameras enabled?)"
                 imgs[cam] = sorted(cand, key=lambda k: ("rgb" not in k, k))[0]
-            print(f"[evaluate] obs mapping: state={state} images={imgs}", flush=True)
-            return state, imgs
+            print(f"[evaluate] obs mapping: state={state} load={load} images={imgs}", flush=True)
+            return state, load, imgs
 
         def get_action(self, env, observation):
             flat = dict(_flatten(observation))
             if self.keys is None:
                 self.keys = self._resolve(flat)
-            sk, ik = self.keys
+            sk, lk, ik = self.keys
             state = np.degrees(flat[sk][:, :6].detach().cpu().numpy().astype(np.float32))
+            if lk is not None:  # same register ints as gen_data.py records (rounded, signed 0.1 % duty)
+                load = flat[lk][:, :6].detach().cpu().round().numpy().astype(np.float32)
+                state = np.concatenate([state, load], axis=1)
             images = {cam: flat[k].detach().cpu().numpy() for cam, k in ik.items()}
             u = env.unwrapped
             tasks = u.get_language_instructions() if hasattr(u, "get_language_instructions") else self.task_description
+            self.grid(images[IMAGE_KEYS[0]])
             act_deg = self.client.get_action(state, images, tasks or "")
             return torch.from_numpy(np.radians(act_deg)).to(device=device, dtype=torch.float32)
 

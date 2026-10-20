@@ -1,0 +1,21 @@
+{
+ "policy": "lerobot",
+ "name": "lerobot_patchbench-groot-n17_replan4",
+ "tier": "loose",
+ "n": 50,
+ "num_envs": 16,
+ "seed": 0,
+ "pose_noise_mm": 1.0,
+ "port": "random",
+ "enable_cameras": true,
+ "endpoint": "tcp://127.0.0.1:5555",
+ "n_action_steps": 4,
+ "save_frames_every": 0,
+ "frames_dir": "/home/shadeform/eval_replan/lerobot_patchbench-groot-n17_replan4/frames_loose",
+ "env_args": [],
+ "policy_args": [],
+ "env_name": null,
+ "arena_policy": null,
+ "jsonl": "/home/shadeform/eval_replan/lerobot_patchbench-groot-n17_replan4/raw/loose.jsonl",
+ "meta": "/home/shadeform/eval_replan/lerobot_patchbench-groot-n17_replan4/raw/loose.meta.json"
+}

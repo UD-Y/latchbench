@@ -9,7 +9,8 @@ Protocol v1 (REQ/REP, one outstanding request; specified in docs/BENCHMARK.md):
     reply    = [header_json, *array_buffers]       header = {"v": 1, "ok": true|false, "error": str?, ...}
     spec     = {"key": str, "dtype": numpy dtype str, "shape": [int, ...]}   one C-contiguous buffer per spec
 
-    cmd "hello":  -> {"policy": str, "action_dim": 6, "chunk_size": H, "image_keys": [...], "state_dim": 6}
+    cmd "hello":  -> {"policy": str, "action_dim": 6, "chunk_size": H, "image_keys": [...], "state_dim": 6 | 12}
+                  state_dim 12 = 6 joint positions [deg] + 6 signed Present_Load counts (to_lerobot.py --state_with_load)
     cmd "infer":  arrays observation.state (B, 6) float32 [deg], observation.images.<cam> (B, H, W, 3) uint8,
                   header "task": [str] * B, "env_ids": [int] * B   ->  arrays action (B, H, 6) float32 [deg]
     cmd "reset":  header "env_ids": [int] | null                    -> {}
@@ -128,6 +129,8 @@ class LeRobotPolicy:
         cs = n_action_steps or getattr(self.policy.config, "n_action_steps", None) or 1
         self.chunk_size = int(cs)
         self.image_keys = [k for k in self.policy.config.input_features if k.startswith("observation.images.")]
+        st = self.policy.config.input_features.get(STATE_KEY)
+        self.state_dim = int(st.shape[0]) if st is not None and st.shape else len(JOINT_NAMES)
 
     def infer(self, obs: dict[str, np.ndarray], task: list[str]) -> np.ndarray:
         torch = self.torch
@@ -141,8 +144,12 @@ class LeRobotPolicy:
             chunk = self.policy.predict_action_chunk(batch)
             if chunk.ndim == 2:
                 chunk = chunk.unsqueeze(1)
-            chunk = chunk[:, : self.chunk_size]
-            acts = torch.stack([self.post(chunk[:, i]) for i in range(chunk.shape[1])], dim=1)
+            # Decode the whole (B, H, D) chunk in one call: GR00T N1.7 relative actions are decoded against the state
+            # cached by this preprocess call and cannot be decoded one step at a time (GrootN17ActionDecodeStep).
+            acts = self.post(chunk)
+            if acts.ndim == 2:
+                acts = acts.unsqueeze(1)
+            acts = acts[:, : self.chunk_size]
         return acts.float().cpu().numpy()
 
     def reset(self, env_ids: list[int] | None) -> None:
@@ -158,7 +165,7 @@ def serve(policy: ServerPolicy, endpoint: str = "tcp://*:5555", *, max_requests:
     sock.setsockopt(zmq.LINGER, 0)
     sock.bind(endpoint)
     log(f"[policy_server] {policy.name} on {endpoint} (chunk {policy.chunk_size})")
-    served = 0
+    served, logged_task = 0, False
     try:
         while max_requests is None or served < max_requests:
             frames = sock.recv_multipart(copy=False)
@@ -168,11 +175,15 @@ def serve(policy: ServerPolicy, endpoint: str = "tcp://*:5555", *, max_requests:
                 cmd = hdr.get("cmd")
                 if cmd == "hello":
                     reply = pack({"ok": True, "policy": policy.name, "chunk_size": policy.chunk_size,
-                                  "action_dim": len(JOINT_NAMES), "state_dim": len(JOINT_NAMES),
+                                  "action_dim": len(JOINT_NAMES),
+                                  "state_dim": int(getattr(policy, "state_dim", len(JOINT_NAMES))),
                                   "image_keys": list(getattr(policy, "image_keys", IMAGE_KEYS)),
                                   "joint_names": list(JOINT_NAMES)})
                 elif cmd == "infer":
                     task = hdr.get("task") or [""] * arrays[STATE_KEY].shape[0]
+                    if not logged_task:  # once: which instructions the sim sends (per env, by target port)
+                        log(f"[policy_server] first infer: env_ids {hdr.get('env_ids')} tasks {task}")
+                        logged_task = True
                     t0 = time.perf_counter()
                     act = np.asarray(policy.infer(arrays, task), dtype=np.float32)
                     b = arrays[STATE_KEY].shape[0]
@@ -261,12 +272,12 @@ class PolicyClient:
         self.request({"cmd": "reset", "env_ids": None if env_ids is None else [int(i) for i in env_ids]})
 
     def get_action(self, state_deg: np.ndarray, images: dict[str, np.ndarray], task: list[str] | str) -> np.ndarray:
-        """``state_deg (B, 6)``, images ``key -> (B, H, W, 3) uint8``, task per env -> actions ``(B, 6)`` [deg]."""
+        """``state_deg (B, state_dim)``, images ``key -> (B, H, W, 3) uint8``, task per env -> actions ``(B, 6)`` [deg]."""
         b = state_deg.shape[0]
         if isinstance(task, str):
             task = [task] * b
         if self._queues is None:
-            self._queues = [np.zeros((self.chunk_size, state_deg.shape[1]), np.float32) for _ in range(b)]
+            self._queues = [np.zeros((self.chunk_size, len(JOINT_NAMES)), np.float32) for _ in range(b)]
             self._pos = np.full(b, self.n_action_steps, dtype=np.int64)
         need = np.nonzero(self._pos >= self.n_action_steps)[0]
         if need.size:

@@ -4,7 +4,7 @@ never in the Isaac Sim venv (torch conflicts).
     python scripts/to_lerobot.py --raw ~/data/raw/patchbench_v0 --repo_id $HF_USER/patchbench-so101-v0 [--push]
 
 Features (CLAUDE.md 6.3; names match a real SO-101 recorded with LeRobot, ``<motor>.pos``):
-  observation.state           float32 (6,)  joint positions [deg]
+  observation.state           float32 (6,)  joint positions [deg]; (12,) with --state_with_load: + signed Present_Load
   action                      float32 (6,)  joint goal positions [deg]
   observation.images.front    video (H, W, 3)
   observation.images.wrist    video (H, W, 3)
@@ -37,13 +37,16 @@ from patchbench import raw_format as rf  # noqa: E402
 ROBOT_TYPE = "so101_follower"
 
 
-def build_features(height: int, width: int) -> dict:
+def build_features(height: int, width: int, state_with_load: bool = False) -> dict:
     def joints(suffix: str) -> list[str]:
         return [f"{j}.{suffix}" for j in rf.JOINT_NAMES]
 
     video = {"dtype": "video", "shape": (height, width, 3), "names": ["height", "width", "channels"]}
     return {
-        "observation.state": {"dtype": "float32", "shape": (6,), "names": joints("pos")},
+        # --state_with_load: GR00T N1.7 reads only observation.state, so the load registers are appended to it
+        # (positions first: relative actions use the first 6 state dims). observation.servo_load stays as well.
+        "observation.state": ({"dtype": "float32", "shape": (12,), "names": joints("pos") + joints("load")}
+                              if state_with_load else {"dtype": "float32", "shape": (6,), "names": joints("pos")}),
         "action": {"dtype": "float32", "shape": (6,), "names": joints("pos")},
         "observation.images.front": dict(video),
         "observation.images.wrist": dict(video),
@@ -66,7 +69,8 @@ def is_complete(root: Path, n_expected: int) -> bool:
 
 
 def convert(raw: Path, repo_id: str, root: Path, vcodec: str, encoder_threads: int | None,
-            max_episodes: int | None) -> int:
+            max_episodes: int | None, state_with_load: bool = False) -> int:
+    import numpy as np
     from lerobot.configs.video import RGBEncoderConfig
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
@@ -85,7 +89,7 @@ def convert(raw: Path, repo_id: str, root: Path, vcodec: str, encoder_threads: i
     shutil.rmtree(partial, ignore_errors=True)
     partial.parent.mkdir(parents=True, exist_ok=True)
     ds = LeRobotDataset.create(
-        repo_id=repo_id, fps=manifest.fps, features=build_features(h, w), root=partial, robot_type=ROBOT_TYPE,
+        repo_id=repo_id, fps=manifest.fps, features=build_features(h, w, state_with_load), root=partial, robot_type=ROBOT_TYPE,
         use_videos=True, image_writer_threads=4, rgb_encoder=RGBEncoderConfig(vcodec=vcodec),
         encoder_threads=encoder_threads,
     )
@@ -96,7 +100,8 @@ def convert(raw: Path, repo_id: str, root: Path, vcodec: str, encoder_threads: i
         ep = rf.read_episode(raw / e["file"])
         for t in range(ep.num_frames):
             ds.add_frame({
-                "observation.state": ep.state[t],
+                "observation.state": (np.concatenate([ep.state[t], ep.servo_load[t]]).astype(np.float32)
+                                      if state_with_load else ep.state[t]),
                 "action": ep.action[t],
                 "observation.images.front": ep.front[t],
                 "observation.images.wrist": ep.wrist[t],
@@ -157,6 +162,8 @@ def main() -> None:
     ap.add_argument("--max_episodes", type=int, default=None)
     ap.add_argument("--overwrite", action="store_true", help="rebuild even if a complete dataset exists")
     ap.add_argument("--no_check", action="store_true")
+    ap.add_argument("--state_with_load", action="store_true",
+                    help="observation.state = 6 positions [deg] + 6 signed Present_Load counts (12,)")
     ap.add_argument("--push", action="store_true", help="push to the Hub (token from HF_TOKEN or `hf auth login`)")
     ap.add_argument("--private", action="store_true")
     args = ap.parse_args()
@@ -169,7 +176,8 @@ def main() -> None:
         print(f"[to_lerobot] {root} already holds {n_expected} episodes; skipped (use --overwrite to rebuild)")
     else:
         t0 = time.time()
-        n = convert(args.raw, args.repo_id, root, args.vcodec, args.encoder_threads, args.max_episodes)
+        n = convert(args.raw, args.repo_id, root, args.vcodec, args.encoder_threads, args.max_episodes,
+                    args.state_with_load)
         print(f"[to_lerobot] wrote {n} episodes to {root} in {time.time() - t0:.0f} s")
     if not args.no_check:
         check(args.repo_id, root)

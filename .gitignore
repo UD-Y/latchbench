@@ -17,3 +17,9 @@ results/gui/
 results/contact_tuning/smoke/
 results/*/raw/*.log
 results/newton_showcase/scene/
+# evaluate.py --save_frames_every grids and render frames (tens to hundreds of MB; the mp4/collages are committed)
+results/**/frames_*/
+results/**/raw/*.log
+# Brev chain tarballs (results are committed unpacked)
+results/brev_*/out/*.tar.gz
+results/brev_*/out/chain_state/

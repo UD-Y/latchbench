@@ -1,0 +1,21 @@
+{
+ "policy": "open_loop",
+ "name": "open_loop",
+ "tier": "loose",
+ "n": 16,
+ "num_envs": 16,
+ "seed": 0,
+ "pose_noise_mm": 1.0,
+ "port": "random",
+ "enable_cameras": true,
+ "endpoint": "tcp://127.0.0.1:5555",
+ "n_action_steps": null,
+ "save_frames_every": 2,
+ "frames_dir": "/home/shadeform/eval_hero/open_loop/frames_loose",
+ "env_args": [],
+ "policy_args": [],
+ "env_name": null,
+ "arena_policy": null,
+ "jsonl": "/home/shadeform/eval_hero/open_loop/raw/loose.jsonl",
+ "meta": "/home/shadeform/eval_hero/open_loop/raw/loose.meta.json"
+}

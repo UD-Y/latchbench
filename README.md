@@ -25,6 +25,16 @@ and provenance: [results/LEADERBOARD.md](results/LEADERBOARD.md).
 
 ![leaderboard](results/leaderboard.png)
 
+What the difference looks like (16 envs, same seeds and port-pose noise for both controllers; an illustration, the
+table above is the measurement). At the moment the telemetry spiral latches, open-loop is jammed against the jack
+face on the same seed:
+
+![open-loop vs telemetry spiral](results/hero_loose16/open_loop_vs_telemetry_closeup.png)
+
+Real-time video of all 16 envs side by side (open-loop 7/16, telemetry spiral 11/16 latched):
+[open_loop_vs_telemetry_loose.mp4](results/hero_loose16/open_loop_vs_telemetry_loose.mp4). Recorded with
+`evaluate.py --enable_cameras --save_frames_every 2`, rendered with `scripts/eval_frames_video.py`.
+
 Within this search strategy, the servo's own load signal does about as well as a perfect force sensor. What that
 does and does not show:
 
@@ -38,6 +48,48 @@ does and does not show:
   [calibration protocol](https://github.com/UD-Y/so101-contact/blob/main/docs/CALIBRATION_PROTOCOL.md) is how
   the sim-to-real check would be done.
 
+## GR00T N1.7 baseline (vision + joint positions)
+
+`UD77/patchbench-groot-n17`: [GR00T N1.7-3B](https://huggingface.co/nvidia/GR00T-N1.7-3B) fine-tuned with
+`lerobot-train` (6000 steps, 1× L40S) on [`UD77/patchbench-so101-v0`](https://huggingface.co/datasets/UD77/patchbench-so101-v0)
+(600 latched expert episodes, loose + medium, front + wrist cameras at 480×640, 30 fps). Evaluated through the same
+evaluator (`--policy lerobot`, policy served from the LeRobot venv over ZMQ), n = 50 per tier:
+
+| | reached | contacted | aligned | latched |
+|---|---|---|---|---|
+| loose | 0.32 | 0.30 | 0.00 | **0.00** [0.00, 0.07] |
+| medium | 0.42 | 0.42 | 0.00 | **0.00** [0.00, 0.07] |
+| spec | 0.40 | 0.38 | 0.00 | **0.00** [0.00, 0.07] |
+
+What it learned: the approach with the plug in hand and the port named in the instruction. It reaches (plug tip
+within 10 mm and 10° of the port mouth) and touches the *target* port in about a third of episodes, at similar rates
+for left, middle and right, and almost never the wrong one (wrong-port 0–4 %). In a separate 16-env camera run on
+loose it latched once (env 7, middle port, 4.1 s; 1/16). Offline, on training frames, it predicts the expert's
+joint goals within 0.2–0.7° (holding still: 1.6°), so the policy server and action decoding are correct
+(`scripts/check_policy_offline.py`).
+
+![GR00T on loose, 16 envs](results/lerobot_patchbench-groot-n17/groot_loose_collage.png)
+
+Video: [groot_loose_16env.mp4](results/lerobot_patchbench-groot-n17/groot_loose_16env.mp4) (real time; each cell
+labelled with its target port and furthest stage). The latched episode:
+[groot_loose_env7_latch.png](results/lerobot_patchbench-groot-n17/groot_loose_env7_latch.png).
+
+Why it does not latch:
+
+- **What the demonstrations contained.** v0 was generated with the expert's default controller, `open_loop`, given the
+  *true* port pose (σ = 0). Every demo is a straight push that works only because the expert knew the port position
+  exactly; there is no search and no reaction to contact, so there is nothing contact-driven to imitate.
+- **What the policy can sense.** Its inputs are two camera images (resized to 256×256 inside N1.7, where the
+  0.1–0.5 mm clearance is about a pixel) and joint positions. Closed-loop error compounds: 0.6° at the shoulder is
+  about 3 mm at the plug tip. It gets no force or load signal.
+- **Not the chunk length.** Re-planning every 4 steps instead of executing whole 16-step chunks did not change the
+  outcome on loose (0/50 latched; reached 0.32, aligned 0.04;
+  [ablation_replan4](results/lerobot_patchbench-groot-n17/ablation_replan4/loose.json)).
+
+That is the regime PatchBench is built to expose. The next baseline (in progress) changes both: demos from the
+telemetry-spiral expert with a 1.5 mm noisy port estimate (approach → contact → search → drop-in → latch), and
+`observation.state` = 6 joint positions + 6 `Present_Load` registers (`scripts/to_lerobot.py --state_with_load`).
+
 ## What is in the box
 
 | Path | What |
@@ -50,6 +102,7 @@ does and does not show:
 | `scripts/evaluate.py`, `leaderboard.py` | evaluator (results JSON per policy × tier) and leaderboard + gap closure |
 | `patchbench/policy_server.py` | ZMQ protocol to evaluate LeRobot policies (e.g. GR00T N1.7) from a separate venv |
 | `scripts/gen_data.py`, `to_lerobot.py` | expert rollouts with cameras → LeRobot v3 dataset (real SO-101 conventions) |
+| `scripts/check_policy_offline.py`, `eval_frames_video.py` | offline check of a LeRobot checkpoint against recorded expert actions; annotated video/collage from `evaluate.py --save_frames_every` grids |
 | `scripts/check_contact.py`, `hold_test.py` | contact tuning (virtual wrist) and the SO-101 servo hold / press test |
 | `scripts/brev/` | setup and overnight chain for a 1× L40S VM |
 | `docs/` | [BENCHMARK.md](docs/BENCHMARK.md) (protocol, formats, policy server), [ENV_AUDIT.md](docs/ENV_AUDIT.md) (versions, APIs, pitfalls), DATA.md |
@@ -110,8 +163,9 @@ python scripts/check_contact.py --viz kit --tiers medium --offsets_mm 0 --tilts_
 ## Status
 
 v0.1 (21 Oct 2026). Done: assets, environment, contact tuning, servo actuator, three controllers, n = 200 sweep,
-evaluator, LeRobot v3 data pipeline (laptop pilot), Brev scripts. Pending: the GR00T N1.7 baseline (dataset at
-scale, fine-tune and evaluation on a 1× L40S), a real-arm calibration run.
+evaluator, LeRobot v3 dataset (600 episodes) on the Hub, GR00T N1.7 fine-tune and evaluation on a 1× L40S, Newton
+cross-check. In progress: GR00T trained on search demos with `Present_Load` in its state. Pending: a real-arm
+calibration run.
 
 ## License
 
