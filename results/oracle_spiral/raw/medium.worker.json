@@ -14,6 +14,6 @@
  "policy_args": [],
  "env_name": null,
  "arena_policy": null,
- "jsonl": "/home/ud/work/patchbench/results/oracle_spiral/raw/medium.jsonl",
- "meta": "/home/ud/work/patchbench/results/oracle_spiral/raw/medium.meta.json"
+ "jsonl": "/home/ud/work/latchbench/results/oracle_spiral/raw/medium.jsonl",
+ "meta": "/home/ud/work/latchbench/results/oracle_spiral/raw/medium.meta.json"
 }

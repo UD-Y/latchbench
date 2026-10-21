@@ -1,0 +1,19 @@
+{
+ "policy": "lerobot",
+ "name": "lerobot_latchbench-groot-n17",
+ "tier": "medium",
+ "n": 50,
+ "num_envs": 16,
+ "seed": 0,
+ "pose_noise_mm": 1.0,
+ "port": "random",
+ "enable_cameras": true,
+ "endpoint": "tcp://127.0.0.1:5555",
+ "n_action_steps": null,
+ "env_args": [],
+ "policy_args": [],
+ "env_name": null,
+ "arena_policy": null,
+ "jsonl": "/home/shadeform/work/latchbench/results/lerobot_latchbench-groot-n17/raw/medium.jsonl",
+ "meta": "/home/shadeform/work/latchbench/results/lerobot_latchbench-groot-n17/raw/medium.meta.json"
+}

@@ -56,7 +56,7 @@ def main():
     ap.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1] / "results" / "contact_tuning")
     args = ap.parse_args()
     runs = [r for r in load(args.root) if r["run_id"] != "smoke"]
-    chosen = "c480_it32_co0.5"  # patchbench/physics.py
+    chosen = "c480_it32_co0.5"  # latchbench/physics.py
     passing = sorted((r for r in runs if r["passes"]), key=lambda r: r["cost"])
     text = ["# Contact tuning report", "", table(runs), ""]
     if passing:
@@ -71,7 +71,7 @@ def main():
         text += ["", f"Spec tier, {s['run_id']}: aligned latch {a['latch_rate']:.1f}, signature {a['signature_rate']:.1f}, "
                  f"peak axial {a['peak_axial_N'][0]:.2f} N, explosions {s['explosions']}, tunnels {s['tunnels']}, "
                  f"max penetration all variants {s['max_penetration_mm']:.3f} mm."]
-    text += ["", f"Chosen for patchbench/physics.py: **{chosen}** (32 iterations: jam penetration 0.12 mm vs 0.73 mm "
+    text += ["", f"Chosen for latchbench/physics.py: **{chosen}** (32 iterations: jam penetration 0.12 mm vs 0.73 mm "
              "at 16 under a 32 N load; see the physics.py docstring)."]
     out = "\n".join(text) + "\n"
     (args.root / "REPORT.md").write_text(out)

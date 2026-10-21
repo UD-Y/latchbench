@@ -150,7 +150,7 @@ def main() -> None:
     prefix = Path(args.out) if args.mode == "pair" else runs[0].dir / f"{runs[0].summary['policy']}_{args.tier}"
     width = 1280 if len(runs) == 1 else 1920
     write_video(runs, titles, prefix.with_suffix(".mp4"), width, args.fps)
-    caption = args.caption or (f"PatchBench, tier {args.tier}, {len(runs[0].ep)} envs (front camera), "
+    caption = args.caption or (f"LatchBench, tier {args.tier}, {len(runs[0].ep)} envs (front camera), "
                                f"port-pose noise {runs[0].summary.get('pose_noise_mm', '?')} mm")
     steps = [int(s) for s in args.collage_steps.split(",") if s]
     write_collage(runs, titles, steps, Path(f"{prefix}_collage.png"), caption)

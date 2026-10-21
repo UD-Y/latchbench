@@ -8,7 +8,7 @@ import pytest
 pxr = pytest.importorskip("pxr")
 from pxr import Gf, Usd, UsdGeom, UsdPhysics  # noqa: E402
 
-from patchbench.assets.build_assets import TIERS, USD_DIR, RJ45Dims, build_all, jack_geometry  # noqa: E402
+from latchbench.assets.build_assets import TIERS, USD_DIR, RJ45Dims, build_all, jack_geometry  # noqa: E402
 
 DIMS = RJ45Dims()
 TOL = 1e-6  # m
@@ -36,7 +36,7 @@ def _local(stage, path, rel_to):
 def test_committed_assets_match_builder(built, tier):
     for key, fresh in built[tier].items():
         committed = USD_DIR / tier / Path(fresh).name
-        assert committed.exists(), f"missing {committed}; run python -m patchbench.assets.build_assets"
+        assert committed.exists(), f"missing {committed}; run python -m latchbench.assets.build_assets"
         assert committed.read_text() == Path(fresh).read_text(), f"{committed} is stale; rebuild the assets"
 
 

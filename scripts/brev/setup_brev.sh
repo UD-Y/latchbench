@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
-# Bootstrap a Brev 1x L40S Ubuntu VM for patchbench. Idempotent: re-run it after every rsync.
+# Bootstrap a Brev 1x L40S Ubuntu VM for latchbench. Idempotent: re-run it after every rsync.
 #
 # Before running (from the laptop):
-#   rsync -avz --exclude .venv --exclude '*.egg-info' ~/work/so101-contact ~/work/patchbench pb:~/work/
+#   rsync -avz --exclude .venv --exclude '*.egg-info' ~/work/servosense ~/work/latchbench pb:~/work/
 # On the VM:
 #   export HF_TOKEN=... HF_USER=...        # optional here; needed for the chain's pushes and GR00T weights
-#   bash ~/work/patchbench/scripts/brev/setup_brev.sh [--force-sync] [--skip-tests]
+#   bash ~/work/latchbench/scripts/brev/setup_brev.sh [--force-sync] [--skip-tests]
 #
 # Result (same layout as the laptop, CLAUDE.md section 3):
 #   ~/work/IsaacLab-Arena   aa36f19 + Isaac Lab submodule bb0c8e1 (HTTPS, shallow, no LFS), uv venv at .venv
 #   ~/work/isaaclab-so101   art-e-fact clone @ 12a3ecc, editable in the Arena venv
-#   ~/work/so101-contact, ~/work/patchbench   (rsynced) editable in the Arena venv
+#   ~/work/servosense, ~/work/latchbench   (rsynced) editable in the Arena venv
 #   ~/work/.venv-lerobot    lerobot[groot,training]==0.6.1 (separate: torch conflicts with Isaac Sim)
 # Log: ~/logs/setup_<timestamp>.log
 #
@@ -46,8 +46,8 @@ exec > >(tee -a "$LOG") 2>&1
 step() { printf '\n=== [%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
 die() { echo "setup_brev.sh: ERROR: $*" >&2; exit 1; }
 
-for d in "$WORK/so101-contact" "$WORK/patchbench"; do
-  [[ -f "$d/pyproject.toml" ]] || die "$d missing: rsync so101-contact and patchbench to $WORK first"
+for d in "$WORK/servosense" "$WORK/latchbench"; do
+  [[ -f "$d/pyproject.toml" ]] || die "$d missing: rsync servosense and latchbench to $WORK first"
 done
 
 step "apt packages"
@@ -109,20 +109,20 @@ else
 fi
 
 step "editable installs into the Arena venv (always redone: uv sync removes them)"
-# pyzmq: the sim-side client of patchbench/policy_server.py (ZMQ policy server for --policy lerobot).
+# pyzmq: the sim-side client of latchbench/policy_server.py (ZMQ policy server for --policy lerobot).
 uv pip install --python "$ARENA/.venv/bin/python" -q \
-  -e "$SO101" -e "$WORK/so101-contact" -e "$WORK/patchbench" pytest pyzmq
+  -e "$SO101" -e "$WORK/servosense" -e "$WORK/latchbench" pytest pyzmq
 "$ARENA/.venv/bin/python" -c \
-  "import isaaclab_so101, so101_contact, patchbench, zmq; print('isaaclab_so101, so101_contact', so101_contact.__version__, ', patchbench OK, pyzmq', zmq.__version__)"
+  "import isaaclab_so101, servosense, latchbench, zmq; print('isaaclab_so101, servosense', servosense.__version__, ', latchbench OK, pyzmq', zmq.__version__)"
 
 step "LeRobot venv ($LEROBOT_SPEC) at $LEROBOT_VENV"
 if ! "$LEROBOT_VENV/bin/python" -c "import importlib.metadata as m, sys; sys.exit(m.version('lerobot') != '0.6.1')" 2>/dev/null; then
   [[ -x "$LEROBOT_VENV/bin/python" ]] || uv venv --python 3.12 "$LEROBOT_VENV"
   uv pip install --python "$LEROBOT_VENV/bin/python" "$LEROBOT_SPEC" pytest
 fi
-# patchbench's raw-format module is numpy-only; the converter imports it from the repo path.
-uv pip install --python "$LEROBOT_VENV/bin/python" -q --no-deps -e "$WORK/patchbench"
-# pyzmq: patchbench/policy_server.py serves LeRobot policies to the sim from this venv.
+# latchbench's raw-format module is numpy-only; the converter imports it from the repo path.
+uv pip install --python "$LEROBOT_VENV/bin/python" -q --no-deps -e "$WORK/latchbench"
+# pyzmq: latchbench/policy_server.py serves LeRobot policies to the sim from this venv.
 uv pip install --python "$LEROBOT_VENV/bin/python" -q pyzmq
 "$LEROBOT_VENV/bin/python" -c "import lerobot, zmq, importlib.metadata as m; print('lerobot', m.version('lerobot'), 'pyzmq', zmq.__version__)"
 "$LEROBOT_VENV/bin/python" -c "import torch; print('torch', torch.__version__, 'cuda', torch.cuda.is_available())"
@@ -149,10 +149,10 @@ else
 fi
 
 if [[ "$SKIP_TESTS" == false ]]; then
-  step "CPU tests: so101-contact"
-  (cd "$WORK/so101-contact" && "$ARENA/.venv/bin/python" -m pytest -q)
-  step "CPU tests: patchbench"
-  (cd "$WORK/patchbench" && "$ARENA/.venv/bin/python" -m pytest -q)
+  step "CPU tests: servosense"
+  (cd "$WORK/servosense" && "$ARENA/.venv/bin/python" -m pytest -q)
+  step "CPU tests: latchbench"
+  (cd "$WORK/latchbench" && "$ARENA/.venv/bin/python" -m pytest -q)
 
   step "Arena smoke test (headless, Franka cube_goal_pose, 20 steps; first launch compiles shaders ~3 min)"
   (
@@ -174,7 +174,7 @@ cat <<EOF
   #  READY  ($(hostname), $(date '+%a %d %b %H:%M %Z'))
   #  Arena venv:   source $ARENA/.venv/bin/activate
   #  LeRobot venv: source $LEROBOT_VENV/bin/activate
-  #  Next: tmux new -s chain; bash $WORK/patchbench/scripts/brev/chain_overnight.sh --dry-run
+  #  Next: tmux new -s chain; bash $WORK/latchbench/scripts/brev/chain_overnight.sh --dry-run
   #  Log:  $LOG
   ######################################################################
 EOF

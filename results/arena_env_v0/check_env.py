@@ -10,8 +10,8 @@ Builds the env exactly as policy_runner does, then
   * ``--bench N``: times N control steps after the hold and reports physics steps/s.
 
     cd ~/work/IsaacLab-Arena && source .venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
-    flock ~/work/.isaac.lock python ~/work/patchbench/results/arena_env_v0/check_env.py --push \
-        --external_environment_class_path patchbench.environment:RJ45PanelEnv rj45_panel --tier loose --no_randomize
+    flock ~/work/.isaac.lock python ~/work/latchbench/results/arena_env_v0/check_env.py --push \
+        --external_environment_class_path latchbench.environment:RJ45PanelEnv rj45_panel --tier loose --no_randomize
 """
 
 from __future__ import annotations
@@ -42,11 +42,11 @@ def main(args):
     from isaaclab_so101.constants import PAN_AXIS_XY, SIM_JOINT_NAMES
     from isaaclab_so101.ee_pose import natural_ik
 
-    from patchbench import physics
-    from patchbench.environment import start_joint_pose
-    from patchbench.objects import DIMS, PLUG_GRASP_BEHIND, wrist_roll_for
-    from patchbench.predicates import STAGES, port_coordinates
-    from patchbench.task import get_state
+    from latchbench import physics
+    from latchbench.environment import start_joint_pose
+    from latchbench.objects import DIMS, PLUG_GRASP_BEHIND, wrist_roll_for
+    from latchbench.predicates import STAGES, port_coordinates
+    from latchbench.task import get_state
     from isaaclab_arena_environments.cli import get_arena_builder_from_cli
 
     builder = get_arena_builder_from_cli(args)

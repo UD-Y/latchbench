@@ -4,7 +4,7 @@ import math
 
 import torch
 
-from patchbench.controllers.ik import (
+from latchbench.controllers.ik import (
     TCP_OFFSET,
     CartesianServo,
     IKCfg,

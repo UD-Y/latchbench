@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from patchbench import raw_format as rf
+from latchbench import raw_format as rf
 
 pytest.importorskip("lerobot.datasets.lerobot_dataset")
 
@@ -41,7 +41,7 @@ def make_synthetic(root: Path, n: int = 3, failed: int = 1) -> rf.Manifest:
 def test_convert_and_load(tmp_path):
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
-    raw, root, repo = tmp_path / "raw", tmp_path / "ds", "local/patchbench-test"
+    raw, root, repo = tmp_path / "raw", tmp_path / "ds", "local/latchbench-test"
     make_synthetic(raw)
     cmd = [sys.executable, str(SCRIPT), "--raw", str(raw), "--repo_id", repo, "--root", str(root)]
     out = subprocess.run(cmd, check=True, capture_output=True, text=True).stdout
@@ -64,7 +64,7 @@ def test_convert_and_load(tmp_path):
     np.testing.assert_allclose(item["observation.state"].numpy(), second.state[1], rtol=0, atol=1e-6)
     np.testing.assert_array_equal(item["observation.servo_load"].numpy(), second.servo_load[1])
 
-    side = [json.loads(line) for line in (root / "meta" / "patchbench_episodes.jsonl").read_text().splitlines()]
+    side = [json.loads(line) for line in (root / "meta" / "latchbench_episodes.jsonl").read_text().splitlines()]
     assert [s["port"] for s in side] == [0, 1, 2] and all(s["tier"] == "loose" for s in side)
     assert not (tmp_path / "ds.partial").exists()
 
@@ -77,7 +77,7 @@ def test_state_with_load(tmp_path):
     """--state_with_load: observation.state = 6 positions + 6 signed Present_Load counts, positions first."""
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
-    raw, root, repo = tmp_path / "raw", tmp_path / "ds", "local/patchbench-test-load"
+    raw, root, repo = tmp_path / "raw", tmp_path / "ds", "local/latchbench-test-load"
     make_synthetic(raw, n=2, failed=0)
     cmd = [sys.executable, str(SCRIPT), "--raw", str(raw), "--repo_id", repo, "--root", str(root),
            "--state_with_load", "--no_check"]

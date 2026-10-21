@@ -3,4 +3,4 @@ stage 1: 0
 stage 2: 0
 stage 3: skip
 stage 4: 0
-tarball: /home/shadeform/out/patchbench_results_20261020_204417.tar.gz
+tarball: /home/shadeform/out/latchbench_results_20261020_204417.tar.gz

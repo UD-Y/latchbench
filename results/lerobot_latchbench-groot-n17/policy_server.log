@@ -1,0 +1,7 @@
+Fetching 27 files:   0%|          | 0/27 [00:00<?, ?it/s]Fetching 27 files: 100%|██████████| 27/27 [00:00<00:00, 2915.04it/s]
+`torch_dtype` is deprecated! Use `dtype` instead!
+Loading weights:   0%|          | 0/1031 [00:00<?, ?it/s]Loading weights:  52%|█████▏    | 538/1031 [00:00<00:00, 2878.98it/s]Loading weights:  80%|████████  | 826/1031 [00:00<00:00, 2291.83it/s]Loading weights: 100%|██████████| 1031/1031 [00:00<00:00, 2484.37it/s]
+/home/shadeform/work/latchbench/latchbench/policy_server.py:136: UserWarning: The given NumPy array is not writable, and PyTorch does not support non-writable tensors. This means writing to this tensor will result in undefined behavior. You may want to copy the array to protect its data or make it writable before converting it to a tensor. This type of warning will be suppressed for the rest of this program. (Triggered internally at /pytorch/torch/csrc/utils/tensor_numpy.cpp:213.)
+  img = torch.from_numpy(np.ascontiguousarray(obs[k]))  # (B, H, W, 3) uint8
+[policy_server] lerobot:groot:UD77/latchbench-groot-n17 on tcp://127.0.0.1:5555 (chunk 16)
+[policy_server] shutdown requested

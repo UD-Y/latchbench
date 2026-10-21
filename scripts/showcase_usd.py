@@ -18,8 +18,8 @@ from pxr import Gf, Sdf, Usd, UsdGeom, UsdShade, Vt
 from scipy.spatial.transform import Rotation as Rot
 
 import newton
-from patchbench.assets.build_assets import USD_DIR, RJ45Dims
-from patchbench.assets.build_visuals import sweep
+from latchbench.assets.build_assets import USD_DIR, RJ45Dims
+from latchbench.assets.build_visuals import sweep
 
 ROOT = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])

@@ -1,0 +1,32 @@
+{
+ "policy": "lerobot_latchbench-groot-n17",
+ "tier": "medium",
+ "n": 50,
+ "seed": 0,
+ "funnel": {
+  "reached": 0.42,
+  "contacted": 0.42,
+  "aligned": 0.0,
+  "seated": 0.0,
+  "latched": 0.0
+ },
+ "success": 0.0,
+ "ci95": [
+  0.0,
+  0.0713
+ ],
+ "mean_time_to_latch_s": null,
+ "wrong_port": 0.0,
+ "overload_events": 0.0,
+ "git_sha": "dede52a+dirty",
+ "servosense_version": "0.1.0",
+ "physics": "physx",
+ "mean_peak_axial_force_n": 1.406,
+ "pose_noise_mm": 1.0,
+ "num_envs": 16,
+ "port": "random",
+ "cameras": true,
+ "wall_time_s": 791.1,
+ "sim_steps": 2400,
+ "policy_path": "UD77/latchbench-groot-n17"
+}

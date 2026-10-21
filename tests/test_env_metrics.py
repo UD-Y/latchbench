@@ -4,7 +4,7 @@ import math
 
 import numpy as np
 
-from patchbench.metrics import compute_mean, compute_nanmean, compute_rate, compute_stage_funnel
+from latchbench.metrics import compute_mean, compute_nanmean, compute_rate, compute_stage_funnel
 
 
 def episodes(*values):

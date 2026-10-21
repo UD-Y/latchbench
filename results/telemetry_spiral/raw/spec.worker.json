@@ -14,6 +14,6 @@
  "policy_args": [],
  "env_name": null,
  "arena_policy": null,
- "jsonl": "/home/ud/work/patchbench/results/telemetry_spiral/raw/spec.jsonl",
- "meta": "/home/ud/work/patchbench/results/telemetry_spiral/raw/spec.meta.json"
+ "jsonl": "/home/ud/work/latchbench/results/telemetry_spiral/raw/spec.jsonl",
+ "meta": "/home/ud/work/latchbench/results/telemetry_spiral/raw/spec.meta.json"
 }

@@ -13,8 +13,8 @@ from pathlib import Path
 
 import numpy as np
 
-from patchbench.assets.build_assets import jack_geometry
-from patchbench.contact_probe import DIMS, OVERTRAVEL, SPEED, START
+from latchbench.assets.build_assets import jack_geometry
+from latchbench.contact_probe import DIMS, OVERTRAVEL, SPEED, START
 
 ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 ap.add_argument("--runs", nargs="+", type=Path, required=True, help="run dirs with summary.json + traces.csv.gz")

@@ -2,7 +2,7 @@
 
 Standalone Newton, no Isaac Sim / Kit. Same geometry (``build_assets.jack_parts`` / ``plate_parts``, the full 3-port
 panel), same plug and latch (masses, beam spring and damping, limits), same compliant 6-DOF wrist (2000 N/m, 5 N*m/rad
-drives about the plug tip), same insertion schedule and the same metrics (``patchbench.contact_probe``). Everything
+drives about the plug tip), same insertion schedule and the same metrics (``latchbench.contact_probe``). Everything
 is built in port_1's jack frame (+X insertion, +Z latch side); gravity is +Z there because the panel mounts the
 latch side down (check_contact.py flips the port by 180 deg about X).
 
@@ -29,9 +29,9 @@ import warp as wp
 
 import newton
 from newton.sensors import SensorContact
-from patchbench import physics
-from patchbench.assets.build_assets import RJ45Dims, jack_geometry, jack_parts, plate_parts, prism_points
-from patchbench.contact_probe import CHAIN, D_LIN, D_ROT, DIMS, K_LIN, K_ROT, WRIST_LIMITS, Probe
+from latchbench import physics
+from latchbench.assets.build_assets import RJ45Dims, jack_geometry, jack_parts, plate_parts, prism_points
+from latchbench.contact_probe import CHAIN, D_LIN, D_ROT, DIMS, K_LIN, K_ROT, WRIST_LIMITS, Probe
 
 parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 parser.add_argument("--dt", type=float, default=physics.PHYSICS_DT, help="probe step [s] (PhysX physics dt)")

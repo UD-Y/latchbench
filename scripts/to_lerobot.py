@@ -1,7 +1,7 @@
-"""Raw episodes (patchbench.raw_format) -> LeRobot v3 dataset. Runs in the separate LeRobot venv (~/work/.venv-lerobot),
+"""Raw episodes (latchbench.raw_format) -> LeRobot v3 dataset. Runs in the separate LeRobot venv (~/work/.venv-lerobot),
 never in the Isaac Sim venv (torch conflicts).
 
-    python scripts/to_lerobot.py --raw ~/data/raw/patchbench_v0 --repo_id $HF_USER/patchbench-so101-v0 [--push]
+    python scripts/to_lerobot.py --raw ~/data/raw/latchbench_v0 --repo_id $HF_USER/latchbench-so101-v0 [--push]
 
 Features (CLAUDE.md 6.3; names match a real SO-101 recorded with LeRobot, ``<motor>.pos``):
   observation.state           float32 (6,)  joint positions [deg]; (12,) with --state_with_load: + signed Present_Load
@@ -13,7 +13,7 @@ Features (CLAUDE.md 6.3; names match a real SO-101 recorded with LeRobot, ``<mot
   task                        language instruction ("insert the cable into the left port")
 
 Per-episode metadata LeRobot has no column for (tier, port, seed, raw file, ...) goes to
-``meta/patchbench_episodes.jsonl`` (one line per dataset episode_index); it is uploaded with the dataset.
+``meta/latchbench_episodes.jsonl`` (one line per dataset episode_index); it is uploaded with the dataset.
 
 The dataset is built in ``<root>.partial`` and moved to ``<root>`` only after ``finalize()``, so an interrupted run
 never leaves something that looks finished. An existing complete dataset is reused (``--overwrite`` rebuilds it).
@@ -30,9 +30,9 @@ import time
 from pathlib import Path
 
 
-# patchbench.raw_format is numpy-only; import it from the repo even when patchbench is not installed in this venv.
+# latchbench.raw_format is numpy-only; import it from the repo even when latchbench is not installed in this venv.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from patchbench import raw_format as rf  # noqa: E402
+from latchbench import raw_format as rf  # noqa: E402
 
 ROBOT_TYPE = "so101_follower"
 
@@ -117,10 +117,10 @@ def convert(raw: Path, repo_id: str, root: Path, vcodec: str, encoder_threads: i
         print(f"[to_lerobot] episode {k + 1}/{len(entries)} ({ep.tier}, port {ep.port}, {ep.num_frames} frames) "
               f"{frames / (time.time() - t0):.0f} frames/s", flush=True)
     ds.finalize()
-    with open(partial / "meta" / "patchbench_episodes.jsonl", "w") as f:
+    with open(partial / "meta" / "latchbench_episodes.jsonl", "w") as f:
         for row in sidecar:
             f.write(json.dumps(row) + "\n")
-    (partial / "meta" / "patchbench_raw_info.json").write_text(json.dumps(manifest.info, indent=1))
+    (partial / "meta" / "latchbench_raw_info.json").write_text(json.dumps(manifest.info, indent=1))
     shutil.rmtree(root, ignore_errors=True)
     os.replace(partial, root)
     return len(entries)
@@ -147,7 +147,7 @@ def push(repo_id: str, root: Path, private: bool) -> None:
     from lerobot.datasets.lerobot_dataset import LeRobotDataset
 
     ds = LeRobotDataset(repo_id, root=root)
-    ds.push_to_hub(tags=["patchbench", "so101", "isaac-lab-arena", "rj45"], private=private,
+    ds.push_to_hub(tags=["latchbench", "so101", "isaac-lab-arena", "rj45"], private=private,
                    upload_large_folder=True)
     print(f"[push] https://huggingface.co/datasets/{repo_id}")
 
@@ -155,7 +155,7 @@ def push(repo_id: str, root: Path, private: bool) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--raw", type=Path, required=True, help="raw dir with manifest.json (from scripts/gen_data.py)")
-    ap.add_argument("--repo_id", required=True, help="e.g. $HF_USER/patchbench-so101-v0")
+    ap.add_argument("--repo_id", required=True, help="e.g. $HF_USER/latchbench-so101-v0")
     ap.add_argument("--root", type=Path, default=None, help="dataset dir (default $HF_LEROBOT_HOME/<repo_id>)")
     ap.add_argument("--vcodec", default="libsvtav1", help="LeRobot video codec (libsvtav1 default; h264 is faster)")
     ap.add_argument("--encoder_threads", type=int, default=None)

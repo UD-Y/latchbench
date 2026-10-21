@@ -57,8 +57,8 @@ from isaaclab.sim.utils.stage import get_current_stage  # noqa: E402
 from isaaclab_physx.physics import PhysxCfg  # noqa: E402
 from pxr import Gf, PhysxSchema, Usd, UsdGeom, UsdPhysics, UsdShade  # noqa: E402
 
-from patchbench.assets.build_assets import USD_DIR, jack_geometry  # noqa: E402
-from patchbench.contact_probe import CHAIN, D_LIN, D_ROT, DIMS, K_LIN, K_ROT, START, Probe  # noqa: E402
+from latchbench.assets.build_assets import USD_DIR, jack_geometry  # noqa: E402
+from latchbench.contact_probe import CHAIN, D_LIN, D_ROT, DIMS, K_LIN, K_ROT, START, Probe  # noqa: E402
 
 TIERS = args.tiers.split(",")
 OFFSETS = [float(x) * 1e-3 for x in args.offsets_mm.split(",")]

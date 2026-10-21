@@ -2,15 +2,15 @@
 # Overnight chain on the Brev 1x L40S VM (after setup_brev.sh printed READY). Run it inside tmux:
 #   tmux new -s chain
 #   export HF_TOKEN=... HF_USER=...          # or a cached `hf auth login` token + HF_USER
-#   bash ~/work/patchbench/scripts/brev/chain_overnight.sh            # Ctrl-b d to detach
-#   bash ~/work/patchbench/scripts/brev/chain_overnight.sh --dry-run  # plan + time estimates only
+#   bash ~/work/latchbench/scripts/brev/chain_overnight.sh            # Ctrl-b d to detach
+#   bash ~/work/latchbench/scripts/brev/chain_overnight.sh --dry-run  # plan + time estimates only
 #
 # Stages (each is resumable and skipped when its output already exists):
 #   1  gen_data      expert rollouts, cameras on, TIERS x 3 ports x EPISODES_PER_PORT latched episodes  [Isaac]
 #   2  to_lerobot    raw -> LeRobot v3 at $HF_LEROBOT_HOME/$DATASET_REPO, then push        [CPU+net, background]
 #   3  sweeps        evaluate.py open_loop / telemetry_spiral / oracle_spiral on loose,medium,spec, n=200,
 #                    state-only (runs while stage 2 encodes)                                             [Isaac]
-#   4  groot         lerobot-train GR00T N1.7 (CLAUDE.md section 10), push to $HF_USER/patchbench-groot-n17 [GPU]
+#   4  groot         lerobot-train GR00T N1.7 (CLAUDE.md section 10), push to $HF_USER/latchbench-groot-n17 [GPU]
 #   5  pack          results tarball in ~/out; then `sudo poweroff` unless NO_POWEROFF=1
 # A failed stage is logged and the chain carries on with every stage that does not depend on it (sweeps do not
 # need data; GR00T needs the converted dataset), then packs and powers off, so a failure never burns the night.
@@ -22,8 +22,8 @@
 #   SWEEP_N [200]  SWEEP_TIERS [loose,medium,spec]  SWEEP_NUM_ENVS [64]  SWEEP_POSE_NOISE_MM [1]
 #   EXPERT_CONTROLLER [policy default: open_loop | oracle_spiral | telemetry_spiral]  EXPERT_POSE_NOISE_MM [policy default 0]
 #   STATE_WITH_LOAD [0; 1 = observation.state = 6 positions + 6 Present_Load, to_lerobot.py --state_with_load]
-#   A second dataset/model next to v0: DATASET_NAME [patchbench-so101-v0]  MODEL_NAME [patchbench-groot-n17]
-#   RAW [~/data/raw/patchbench_v0]  GROOT_RUN [groot_patchbench]  STATE_DIR [~/out/chain_state]
+#   A second dataset/model next to v0: DATASET_NAME [latchbench-so101-v0]  MODEL_NAME [latchbench-groot-n17]
+#   RAW [~/data/raw/latchbench_v0]  GROOT_RUN [groot_latchbench]  STATE_DIR [~/out/chain_state]
 #   GROOT_STEPS [6000]  GROOT_BATCH [32]  NO_POWEROFF [0]  SKIP_STAGES (e.g. "1,4")  VCODEC [libsvtav1]
 # Time-estimate inputs (measure them on the L40S: gen_data prints env-frames/s, to_lerobot prints frames/s):
 #   DATAGEN_FPS [60, placeholder]  EP_SECONDS [6]  FAIL_SECONDS [20]  DATAGEN_SUCCESS [0.5]  ENCODE_FPS [60, placeholder]
@@ -40,7 +40,7 @@ for arg in "$@"; do
 done
 
 WORK="${WORK:-$HOME/work}"
-PB="$WORK/patchbench"
+PB="$WORK/latchbench"
 ARENA="$WORK/IsaacLab-Arena"
 ARENA_PY="$ARENA/.venv/bin/python"
 LEROBOT_VENV="$WORK/.venv-lerobot"
@@ -75,13 +75,13 @@ GROOT_SEC_PER_STEP="${GROOT_SEC_PER_STEP:-0.6}"
 STARTUP_S="${STARTUP_S:-120}"
 
 HF_USER="${HF_USER:-}"
-DATASET_REPO="${HF_USER:-HF_USER}/${DATASET_NAME:-patchbench-so101-v0}"
-MODEL_REPO="${HF_USER:-HF_USER}/${MODEL_NAME:-patchbench-groot-n17}"
-RAW="${RAW:-$HOME/data/raw/patchbench_v0}"
+DATASET_REPO="${HF_USER:-HF_USER}/${DATASET_NAME:-latchbench-so101-v0}"
+MODEL_REPO="${HF_USER:-HF_USER}/${MODEL_NAME:-latchbench-groot-n17}"
+RAW="${RAW:-$HOME/data/raw/latchbench_v0}"
 export HF_LEROBOT_HOME="${HF_LEROBOT_HOME:-$HOME/.cache/huggingface/lerobot}"
 DATASET_ROOT="$HF_LEROBOT_HOME/$DATASET_REPO"
-GROOT_RUN="${GROOT_RUN:-groot_patchbench}"
-GROOT_OUT="$WORK/outputs/$GROOT_RUN"   # CLAUDE.md section 10 uses outputs/groot_patchbench, run from $WORK
+GROOT_RUN="${GROOT_RUN:-groot_latchbench}"
+GROOT_OUT="$WORK/outputs/$GROOT_RUN"   # CLAUDE.md section 10 uses outputs/groot_latchbench, run from $WORK
 RESULTS="$PB/results"
 STATE="${STATE_DIR:-$HOME/out/chain_state}"    # stage markers
 TS="$(date +%Y%m%d_%H%M%S)"
@@ -142,7 +142,7 @@ EOF
 datagen_complete() {
   "$ARENA_PY" - "$RAW" "$EPISODES_PER_PORT" "${TIER_LIST[@]}" <<'PY' 2>/dev/null
 import sys
-from patchbench import raw_format as rf
+from latchbench import raw_format as rf
 root, n, tiers = sys.argv[1], int(sys.argv[2]), sys.argv[3:]
 m = rf.load_manifest(root)
 sys.exit(0 if all(m.count(tier=t, port=p) >= n for t in tiers for p in range(3)) else 1)
@@ -265,7 +265,7 @@ stage_groot() {
 }
 
 stage_pack() {
-  local tarball="$HOME/out/patchbench_results_$TS.tar.gz"
+  local tarball="$HOME/out/latchbench_results_$TS.tar.gz"
   local items=("$RESULTS" "$HOME/logs")
   [[ -f "$RAW/manifest.json" ]] && items+=("$RAW/manifest.json")
   [[ -d "$DATASET_ROOT/meta" ]] && items+=("$DATASET_ROOT/meta")
@@ -278,7 +278,7 @@ stage_pack() {
     for k in 1 2 3 4; do echo "stage $k: ${RC[$k]:-not run}"; done
     echo "tarball: $tarball"
   } | tee "$HOME/out/chain_$TS.summary"
-  log "fetch with: rsync -avz pb:out/ ~/work/patchbench/results/brev_$TS/"
+  log "fetch with: rsync -avz pb:out/ ~/work/latchbench/results/brev_$TS/"
 }
 
 # ------------------------------------------------------------------------------------------------- sequence

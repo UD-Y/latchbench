@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from patchbench import results_io as rio
+from latchbench import results_io as rio
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,7 +17,7 @@ def _fake(d: Path, policy: str, tier: str, success: float, n: int = 100):
          "funnel": {"reached": 1.0, "contacted": 0.9, "aligned": max(success, 0.5), "seated": success,
                     "latched": success},
          "success": success, "ci95": [lo, hi], "mean_time_to_latch_s": 5.0 if success else None, "wrong_port": 0.0,
-         "overload_events": 0.0, "git_sha": "abc", "so101_contact_version": "0.1.0", "physics": "physx"}
+         "overload_events": 0.0, "git_sha": "abc", "servosense_version": "0.1.0", "physics": "physx"}
     (d / policy).mkdir(parents=True, exist_ok=True)
     (d / policy / f"{tier}.json").write_text(json.dumps(r))
 

@@ -16,4 +16,4 @@ Beam check: peak axial / beam tip force = 0.50.
 
 Spec tier, spec_c480_it32_co0.5: aligned latch 1.0, signature 1.0, peak axial 2.46 N, explosions 0, tunnels 0, max penetration all variants 0.115 mm.
 
-Chosen for patchbench/physics.py: **c480_it32_co0.5** (32 iterations: jam penetration 0.12 mm vs 0.73 mm at 16 under a 32 N load; see the physics.py docstring).
+Chosen for latchbench/physics.py: **c480_it32_co0.5** (32 iterations: jam penetration 0.12 mm vs 0.73 mm at 16 under a 32 N load; see the physics.py docstring).

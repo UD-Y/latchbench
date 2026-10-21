@@ -6,8 +6,8 @@ server uses, and compares each predicted chunk with the recorded joint goals ``a
 on the frames it was trained on; errors of tens of degrees point to a pipeline bug, not a weak policy.
 Runs in the lerobot venv (GPU; not next to Isaac Sim on the laptop):
 
-    ~/work/.venv-lerobot/bin/python scripts/check_policy_offline.py --policy.path UD77/patchbench-groot-n17 \
-        --raw ~/data/raw/patchbench_v0 --episodes 0,250,500 --frames 0,30,60,90,120
+    ~/work/.venv-lerobot/bin/python scripts/check_policy_offline.py --policy.path UD77/latchbench-groot-n17 \
+        --raw ~/data/raw/latchbench_v0 --episodes 0,250,500 --frames 0,30,60,90,120
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from patchbench import raw_format as rf  # noqa: E402
-from patchbench.policy_server import IMAGE_KEYS, JOINT_NAMES, STATE_KEY, LeRobotPolicy  # noqa: E402
+from latchbench import raw_format as rf  # noqa: E402
+from latchbench.policy_server import IMAGE_KEYS, JOINT_NAMES, STATE_KEY, LeRobotPolicy  # noqa: E402
 
 
 def main() -> None:

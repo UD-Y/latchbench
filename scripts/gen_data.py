@@ -1,10 +1,10 @@
-"""Expert rollouts with cameras -> raw episodes (patchbench.raw_format: one npz per episode + manifest.json).
+"""Expert rollouts with cameras -> raw episodes (latchbench.raw_format: one npz per episode + manifest.json).
 
 Runs in the Arena venv. Only successful (latched) episodes are saved. Resumable: per (tier, port) it counts the
 successes already in ``--out/manifest.json`` and generates only the rest.
 
     flock -o ~/work/.isaac.lock python scripts/gen_data.py --tiers loose,medium --episodes_per_port 150 \
-        --num_envs 8 --height 480 --width 640 --out ~/data/raw/patchbench_v0
+        --num_envs 8 --height 480 --width 640 --out ~/data/raw/latchbench_v0
 
 The top-level call never starts Isaac Sim itself: it runs one child process per (tier, port) in sequence (the env
 is built for one tier and one target port), so the whole call holds the Isaac lock once. Extra arguments after
@@ -15,7 +15,7 @@ Recorded per control step t (30 Hz), before ``env.step``:
   state   = robot joint positions [deg], LeRobot joint order (sim Rotation..Jaw == shoulder_pan..gripper)
   action  = absolute joint position targets the sim received for step t [deg] (portable across action terms)
   front / wrist = ``camera_obs`` terms (``--front_key`` / ``--wrist_key``), uint8 RGB, resized to --height/--width
-  servo_load / servo_current = so101_contact telemetry registers (signed Present_Load, Present_Current counts)
+  servo_load / servo_current = servosense telemetry registers (signed Present_Load, Present_Current counts)
 """
 
 from __future__ import annotations
@@ -32,9 +32,9 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from patchbench import raw_format as rf  # noqa: E402
+from latchbench import raw_format as rf  # noqa: E402
 
-ENV_CLASS = "patchbench.environment:RJ45PanelEnv"
+ENV_CLASS = "latchbench.environment:RJ45PanelEnv"
 ENV_NAME = "rj45_panel"
 
 
@@ -120,12 +120,12 @@ def run_child(parser: argparse.ArgumentParser) -> None:
     )
     from isaaclab_arena_environments.cli import get_arena_builder_from_cli, get_isaaclab_arena_environments_cli_parser
     from isaaclab_so101.mapping import SIM_JOINT_NAMES
-    from so101_contact.isaaclab.observations import servo_current, servo_load
+    from servosense.isaaclab.observations import servo_current, servo_load
 
     try:
-        import patchbench.policies  # noqa: F401  (registers expert / scripted policies)
+        import latchbench.policies  # noqa: F401  (registers expert / scripted policies)
     except ImportError as e:
-        print(f"[gen_data] WARNING: patchbench.policies not importable ({e})")
+        print(f"[gen_data] WARNING: latchbench.policies not importable ({e})")
 
     add_policy_runner_arguments(parser)
     args_cli, _ = parser.parse_known_args()

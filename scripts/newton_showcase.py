@@ -30,11 +30,11 @@ from scipy.spatial.transform import Rotation as Rot
 
 import newton
 from newton._src.utils.download_assets import MENAGERIE_REF, MENAGERIE_URL, download_git_folder
-from patchbench import physics
-from patchbench.contact_probe import DIMS
-from patchbench.controllers.ik import SO101Kinematics
-from patchbench.newton_rj45 import ContactCfg, add_panel, add_plug, extend_last_articulation
-from patchbench.objects import PLUG_IN_HAND_ROT_XYZW, plug_in_hand_pos
+from latchbench import physics
+from latchbench.contact_probe import DIMS
+from latchbench.controllers.ik import SO101Kinematics
+from latchbench.newton_rj45 import ContactCfg, add_panel, add_plug, extend_last_articulation
+from latchbench.objects import PLUG_IN_HAND_ROT_XYZW, plug_in_hand_pos
 
 ROOT = Path(__file__).resolve().parents[1]
 ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
@@ -139,7 +139,7 @@ def plan_targets(q_deg: np.ndarray) -> tuple[np.ndarray, np.ndarray, int]:
     mouth; 0.5 s to line up on the jack axis; a straight insertion at 10 mm/s (our open-loop controller's motion) to
     ``--final_depth_mm``; hold. The straight segment is IK on the shared SO-101 kinematics: replaying the recorded
     joints instead reproduces the PhysX path's servo-sag tilt, which a position-controlled arm cannot correct."""
-    from patchbench.controllers.ik import IKCfg, solve_ik
+    from latchbench.controllers.ik import IKCfg, solve_ik
 
     kin = SO101Kinematics()  # float32, as the IK
     F32 = torch.float32

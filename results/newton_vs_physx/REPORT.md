@@ -1,11 +1,11 @@
 # RJ45 contact probe: PhysX vs Newton (MuJoCo-Warp)
 
-20 Oct 2026, laptop (RTX 4060 8 GB), headless. Question: do the things PatchBench depends on (the latch force
+20 Oct 2026, laptop (RTX 4060 8 GB), headless. Question: do the things LatchBench depends on (the latch force
 signature, and jamming that grows as clearance shrinks) survive a change of physics engine, or are they PhysX artefacts?
 
 ## Setup
 
-Both engines run the same probe (`patchbench/contact_probe.py`): the plug hangs on a compliant 6-DOF virtual wrist
+Both engines run the same probe (`latchbench/contact_probe.py`): the plug hangs on a compliant 6-DOF virtual wrist
 (2000 N/m, 5 N·m/rad, pivot at the plug tip) and is pushed into port_1 at 10 mm/s to seat + 3 mm, held, then
 pulled back 3 mm. The grid is 3 tiers × lateral offset {0, 0.2, 0.5, 1.0} mm × tilt {0, 1, 2}° × 5 seeds
 (180 insertions per engine). Seeds draw the offset direction and tilt axis, and both engines get the same draws
@@ -16,9 +16,9 @@ spring and damping, and joint limits are identical.
 | | PhysX | Newton |
 |---|---|---|
 | Script | `scripts/check_contact.py` (Isaac Lab, pinned `bb0c8e1`) | `scripts/check_contact_newton.py` (standalone, no Kit) |
-| Solver | TGS, 32 position iterations, dt 1/480 s (`patchbench/physics.py`) | Newton 1.5.0 `SolverMuJoCo` (mujoco-warp 3.11.0), 100 iterations, elliptic cone, 1/480 s split into N substeps |
+| Solver | TGS, 32 position iterations, dt 1/480 s (`latchbench/physics.py`) | Newton 1.5.0 `SolverMuJoCo` (mujoco-warp 3.11.0), 100 iterations, elliptic cone, 1/480 s split into N substeps |
 | Contact | rigid, 0.5 mm contact offset, μ 0.35 | soft: `solref` time constant 2 × substep (the stiffest stable value), `solimp` (0.99, 0.999, 0.2 mm), μ 0.35 |
-| Collision | PhysX | MuJoCo-Warp (one point per box–mesh pair), or Newton's pipeline (`--contacts newton`, manifolds, 0.5 mm gap) |
+| Collision | PhysX | MuJoCo-Warp (one point per box-mesh pair), or Newton's pipeline (`--contacts newton`, manifolds, 0.5 mm gap) |
 
 Refactor check: the PhysX probe after moving the metrics into `contact_probe.py` reproduces the pre-refactor script
 exactly (0 differing fields over 120 episodes, same day, same machine).
@@ -31,7 +31,7 @@ a simulated cable, and the plug dragged by hand. Its latch spring (0.15 N·m/rad
 
 **With NVIDIA's recommended contact-rich settings (Newton's collision pipeline feeding MuJoCo-Warp, `impratio`
 1000, as in Newton's `example_robot_panda_hydro` and NVIDIA's contact-rich manipulation blog), Newton reproduces
-PatchBench's PhysX results.** The latch signature, the jam statistics and the clearance-tier ranking all transfer:
+LatchBench's PhysX results.** The latch signature, the jam statistics and the clearance-tier ranking all transfer:
 
 | latch rate, 60 insertions per tier | loose | medium | spec |
 |---|---|---|---|
@@ -72,7 +72,7 @@ At ≤ 0.5 mm offset the engines agree closely (PhysX loses a few spec/medium se
 ## Findings
 
 1. **The latch signature is not a PhysX artefact.** On both engines an aligned plug deflects the latch (mean maximum
-   deflection, PhysX / Newton at 8 substeps: loose −4.3° / −4.5°, medium −6.6° / −7.2°, spec −7.9° / −8.0°), the axial force rises to a peak, and it drops
+   deflection, PhysX / Newton at 8 substeps: loose -4.3° / -4.5°, medium -6.6° / -7.2°, spec -7.9° / -8.0°), the axial force rises to a peak, and it drops
    when the latch snaps. Peak axial force (aligned, 5-seed mean): loose 0.49 / 0.46 N, medium 1.37 / 1.47 N,
    spec 2.46 / 2.97 N (PhysX / Newton). Peak force grows as the tier tightens on both engines.
 
@@ -83,7 +83,7 @@ At ≤ 0.5 mm offset the engines agree closely (PhysX loses a few spec/medium se
 
    | μ | 0 | 0.35 | 1.0 | 2.0 |
    |---|---|---|---|---|
-   | PhysX latched | 4/4 | jams | 0/4 | – |
+   | PhysX latched | 4/4 | jams | 0/4 | - |
    | Newton latched | 4/4 | 4/4 | 4/4 | 4/4 |
 
    With no friction, PhysX also slides the plug in: an edge contact on the slightly rotated plug gives a real
@@ -96,28 +96,28 @@ At ≤ 0.5 mm offset the engines agree closely (PhysX loses a few spec/medium se
    `impratio` 1000 with MuJoCo's own collision still slides 4/4 in. Newton's hydroelastic contact, NVIDIA's model
    for flat-on-flat contact, did not work at this scale in the time available: with 0.1 mm SDF voxels the 1 mm latch
    and walls inverted (pressure pulled the plug in) and the plug tunnelled through the 2 mm back wall at
-   `kh` 1e11–1e13 ([hydro/](hydro/)). Thin features need more SDF tuning than we did.
+   `kh` 1e11 to 1e13 ([hydro/](hydro/)). Thin features need more SDF tuning than we did.
 
 3. **The thin latch needs much stiffer MuJoCo contacts than Arena's defaults.** Arena's USB-C settings
-   (`solimp` 0.95…, `solref` 4 ms) make the 0.3 g latch's contact stiffness about 120 N/m at first touch (MuJoCo's
+   (`solimp` 0.95 and up, `solref` 4 ms) make the 0.3 g latch's contact stiffness about 120 N/m at first touch (MuJoCo's
    impedance scales with effective mass), so the latch sinks through the lip: 37 explosions and 45 tunnels in 180
    runs. Time constant 2 × substep with d₀ = 0.99 fixes it. This only matters for very light parts; the USB-C task
    has none.
 
-4. **The latch chatters on Newton.** During deflection the latch angle reverses 87–167 times per insertion on Newton
-   (92–107 with `impratio` 1000) and never on PhysX (aligned, seed 0). The axial force dips to −1 to −47 N around the
-   snap (−2 to −5 N with `impratio` 1000); PhysX never goes below 0. More substeps do not remove this consistently (loose: −25 N at 8 substeps,
-   −5.5 N at 4; medium: −0.9 N vs −47 N). Latch and signature metrics still pass, but a policy reading force or
+4. **The latch chatters on Newton.** During deflection the latch angle reverses 87 to 167 times per insertion on Newton
+   (92 to 107 with `impratio` 1000) and never on PhysX (aligned, seed 0). The axial force dips to -1 to -47 N around the
+   snap (-2 to -5 N with `impratio` 1000); PhysX never goes below 0. More substeps do not remove this consistently (loose: -25 N at 8 substeps,
+   -5.5 N at 4; medium: -0.9 N vs -47 N). Latch and signature metrics still pass, but a policy reading force or
    Present_Load would see this noise.
 
-5. **Cost.** At comparable fidelity (8 substeps), Newton took 1.6–1.9 wall s per sim s per tier (12 worlds) versus
+5. **Cost.** At comparable fidelity (8 substeps), Newton took 1.6 to 1.9 wall s per sim s per tier (12 worlds) versus
    PhysX's 4.1 for all 36 envs in one scene: about 3.3k vs 4.2k env-steps/s on this laptop. MuJoCo-Warp needs one
    model per tier because worlds must share geometry, and 12 worlds do not fill the GPU. This is not a scaling
    benchmark.
 
 ## Recommendation
 
-PatchBench's contact physics is engine-portable: the same assets and probe give the same tier statistics on PhysX
+LatchBench's contact physics is engine-portable: the same assets and probe give the same tier statistics on PhysX
 and on Newton, provided Newton uses its own collision pipeline and NVIDIA's `impratio` 1000. That is the setting to
 use for a Newton port (with BAM driving the SO-101 on Newton). The headline benchmark stays on PhysX for v0.1
 because the SO-101 USD does not load in Newton yet and PhysX has no explosions or latch chatter on this probe.
@@ -126,7 +126,7 @@ Default MuJoCo settings (one contact point per pair, `impratio` 1) are not suita
 ## Reproduce
 
 ```bash
-cd ~/work/patchbench && source ../IsaacLab-Arena/.venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
+cd ~/work/latchbench && source ../IsaacLab-Arena/.venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
 T=loose,medium,spec; OUT=results/newton_vs_physx
 flock -o ~/work/.isaac.lock python scripts/check_contact.py --tiers $T --pos_iters 32 --run_id physx_it32_co0.5 --out $OUT
 flock -o ~/work/.isaac.lock python scripts/check_contact_newton.py --tiers $T --substeps 8 --out $OUT

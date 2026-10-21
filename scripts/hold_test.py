@@ -1,6 +1,6 @@
 """SO-101 on STS3215 actuators: gravity hold, 30 deg step and press test (headless, PhysX, 1 env, no cameras).
 
-Spawns two SO-101s (isaaclab_so101) side by side: one with all six joints on so101-contact's STS3215Actuator
+Spawns two SO-101s (isaaclab_so101) side by side: one with all six joints on servosense's STS3215Actuator
 (LeRobot settings), one with isaaclab_so101's implicit PD as the baseline.
 
 (a) hold the home pose 5 s: steady-state sag per joint and Present_Load, vs the implicit-PD baseline
@@ -8,10 +8,10 @@ Spawns two SO-101s (isaaclab_so101) side by side: one with all six joints on so1
 (c) press the gripper into a fixed sphere: Present_Load on shoulder_lift / elbow_flex vs measured contact force
 
     cd ~/work/IsaacLab-Arena && source .venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
-    python ~/work/patchbench/scripts/hold_test.py [--friction_mode explicit|physx_joint] [--out DIR]
-    python ~/work/patchbench/scripts/hold_test.py --viz kit --slowmo 1 --hold_open   # watch it (laptop: nothing else running)
+    python ~/work/latchbench/scripts/hold_test.py [--friction_mode explicit|physx_joint] [--out DIR]
+    python ~/work/latchbench/scripts/hold_test.py --viz kit --slowmo 1 --hold_open   # watch it (laptop: nothing else running)
 
-Writes PNGs and summary.json to patchbench/results/hold_test/.
+Writes PNGs and summary.json to latchbench/results/hold_test/.
 """
 
 import argparse
@@ -43,7 +43,7 @@ from isaaclab.utils.math import quat_apply  # noqa: E402
 from isaaclab_so101.assets import SO101_CFG  # noqa: E402
 from isaaclab_so101.constants import HOME_JOINT_POS, TCP_OFFSET  # noqa: E402
 
-from so101_contact.isaaclab.actuator import SO101_SIM_TO_LEROBOT, STS3215Actuator, so101_sts3215_cfg  # noqa: E402
+from servosense.isaaclab.actuator import SO101_SIM_TO_LEROBOT, STS3215Actuator, so101_sts3215_cfg  # noqa: E402
 
 DT = 1 / 240  # physics; telemetry and commands at 30 Hz (decimation 8)
 DECIMATION = 8

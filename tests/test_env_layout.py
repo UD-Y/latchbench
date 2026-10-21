@@ -1,7 +1,7 @@
 """RJ45 env layout: in-hand plug pose, start pose and reachability of every port under randomization (no Isaac Sim).
 
-Needs ``pxr`` (patchbench.assets) and ``isaaclab_so101`` (pure-Python ee_pose/constants): run in the Arena venv,
-    cd ~/work/IsaacLab-Arena && .venv/bin/python -m pytest -q ~/work/patchbench/tests/test_env_layout.py
+Needs ``pxr`` (latchbench.assets) and ``isaaclab_so101`` (pure-Python ee_pose/constants): run in the Arena venv,
+    cd ~/work/IsaacLab-Arena && .venv/bin/python -m pytest -q ~/work/latchbench/tests/test_env_layout.py
 """
 
 import itertools
@@ -15,8 +15,8 @@ ee_pose = pytest.importorskip("isaaclab_so101.ee_pose")
 
 from isaaclab_so101.constants import JOINT_LIMITS_RAD, PAN_AXIS_XY, SIM_JOINT_NAMES  # noqa: E402
 
-from patchbench.environment import start_joint_pose  # noqa: E402
-from patchbench.objects import (  # noqa: E402
+from latchbench.environment import start_joint_pose  # noqa: E402
+from latchbench.objects import (  # noqa: E402
     DIMS,
     PANEL_POS,
     PANEL_POS_RANGE,

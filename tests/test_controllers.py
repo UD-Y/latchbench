@@ -11,15 +11,15 @@ import math
 import pytest
 import torch
 
-from patchbench.controllers import (
+from latchbench.controllers import (
     ControllerObs,
     OpenLoopCfg,
     OpenLoopController,
     SpiralCfg,
     SpiralController,
 )
-from patchbench.controllers.ik import SO101Kinematics, solve_ik
-from patchbench.controllers.open_loop import DONE, HOLD, INIT, INSERT, SEARCH
+from latchbench.controllers.ik import SO101Kinematics, solve_ik
+from latchbench.controllers.open_loop import DONE, HOLD, INIT, INSERT, SEARCH
 
 HOME = torch.tensor([-0.2736, -0.6109, -0.0745, 1.5148, -1.6034, -0.1465])
 SEAT = 0.016

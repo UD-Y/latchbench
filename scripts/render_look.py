@@ -32,7 +32,7 @@ import omni.usd  # noqa: E402
 from PIL import Image  # noqa: E402
 from pxr import Gf, UsdGeom, UsdLux  # noqa: E402
 
-from patchbench.assets.build_assets import USD_DIR  # noqa: E402
+from latchbench.assets.build_assets import USD_DIR  # noqa: E402
 
 LOOK = USD_DIR / "look"
 

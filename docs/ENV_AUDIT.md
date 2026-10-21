@@ -36,7 +36,7 @@ The `Isaac-GR00T` submodule is not fetched: it is only used by the `gr00t-client
 
 Isaac Lab's stated minimum is 32 GB RAM and 16 GB VRAM (`submodules/IsaacLab/docs/source/setup/installation/index.rst:87`). The laptop has half of each.
 
-## 2a. Smoke tests (gate G0) — both pass
+## 2a. Smoke tests (gate G0): both pass
 
 Measured on the laptop, one Isaac process at a time, idle baseline 1.7 GB RAM used / 0.5 GB VRAM:
 
@@ -76,19 +76,19 @@ ActuatorBase.compute(self, control_action: ArticulationActions, joint_pos, joint
 ## 4. SO-101 and BAM
 
 - `isaaclab_assets.robots.so101` exists in the pinned submodule: `SO101_CFG`, `SO101_HIGH_PD_CFG`.
-- **BAM is not installed.** `BamActuatorCfg` / `BamMotorCfg` are not in `bb0c8e1` and not on Isaac Lab `main`. They are on the **`develop`** branch
+- BAM is not installed: `BamActuatorCfg` / `BamMotorCfg` are not in `bb0c8e1` and not on Isaac Lab `main`. They are on the **`develop`** branch
   (`0ec7c29`, 2026-10-19): `source/isaaclab/isaaclab/actuators/actuator_bam_cfg.py`,
-  `source/isaaclab_newton/isaaclab_newton/actuators/bam.py`, `bam_kernels.py`. `so101-contact` mirrors names and equations from there.
+  `source/isaaclab_newton/isaaclab_newton/actuators/bam.py`, `bam_kernels.py`. `servosense` mirrors names and equations from there.
 
 ## 5. isaaclab-so101 embodiment
 
-- Register after `SimulationApp` starts: `isaaclab_so101.register()` → embodiments `so101_abs_joint` (absolute joint positions),
+- Register after `SimulationApp` starts: `isaaclab_so101.register()` adds the embodiments `so101_abs_joint` (absolute joint positions),
   `so101_rel_joint`, `so101_ik` (relative SE(3) diff-IK + binary Jaw), `so101_abs_ik`, plus devices `so101_leader`, `so101_gamepad`.
 - **Sim joint names differ from LeRobot's**: sim `Rotation, Pitch, Elbow, Wrist_Pitch, Wrist_Roll, Jaw`; LeRobot
   `shoulder_pan, shoulder_lift, elbow_flex, wrist_flex, wrist_roll, gripper`. `isaaclab_so101.mapping` (`LEROBOT_JOINT_KEYS`,
   `motor_norm_to_sim_radians`, `sim_radians_to_motor_norm`) does the conversion. Datasets use LeRobot names (CLAUDE.md 6.3).
-- Joint limits (deg): Rotation ±110, Pitch ±100, Elbow −100/+90, Wrist_Pitch ±95, Wrist_Roll ±160, Jaw −10/+100.
-- `TCP_OFFSET = (-0.007, 0, -0.102)` m in the `gripper` link frame (−Z along the jaws). The plug's fixed attach parent is the `gripper` link.
+- Joint limits (deg): Rotation ±110, Pitch ±100, Elbow -100/+90, Wrist_Pitch ±95, Wrist_Roll ±160, Jaw -10/+100.
+- `TCP_OFFSET = (-0.007, 0, -0.102)` m in the `gripper` link frame (-Z along the jaws). The plug's fixed attach parent is the `gripper` link.
 - Cameras (`enable_cameras=True`): `camera_ego` (wrist, obs `camera_ego_rgb`) and `external_camera` (attached to the base, obs
   `external_camera_rgb`), both 640×480 RGB. Map to `observation.images.wrist` / `observation.images.front`.
 - Default actuators (`isaaclab_so101/assets.py`, the embodiment we use): one `ImplicitActuatorCfg` per joint, **`effort_limit_sim=30` N·m on
@@ -97,7 +97,7 @@ ActuatorBase.compute(self, control_action: ArticulationActions, joint_pos, joint
   `SO101_CFG` instead uses `joint_effort_limit=10`, stiffness 17.8, damping 0.60 (LeIsaac values). Neither model has servo
   saturation, back-EMF or telemetry; `STS3215Actuator` replaces them on all six joints.
 - USD `isaaclab_so101/embodiments/data/SO-ARM101-USD.usd`: articulation root `/so101_new_calib/base`; rigid links `base, shoulder,
-  upper_arm, lower_arm, wrist, gripper, jaw`; revolute joints `Rotation … Jaw`. **Plug attach parent: `gripper`** (the fixed jaw; `jaw` moves).
+  upper_arm, lower_arm, wrist, gripper, jaw`; revolute joints `Rotation` to `Jaw`. **Plug attach parent: `gripper`** (the fixed jaw; `jaw` moves).
 - Arm faces +X; `init_state` yaws the base 90°. Newton cannot load this USD yet (README).
 
 ## 6. Arena APIs (aa36f19)
@@ -115,7 +115,7 @@ ActuatorBase.compute(self, control_action: ArticulationActions, joint_pos, joint
 | Custom object asset example | `isaaclab_arena_environments/isaac_cap/usbc_insertion/assets.py` (also `isaaclab_arena/assets/object_library.py`) |
 
 **Contradiction with the plan:** there is no `CompletionCriteria` class. Success is `TaskTerminationCfg.success`, a list of
-`ProgressObjective`s; with `subtasks_are_sequential=True` the stages reach → contact → align → seat → latch map onto one
+`ProgressObjective`s; with `subtasks_are_sequential=True` the stages (reach, contact, align, seat, latch) map onto one
 `predicate_sequence`. MONDAY.md P5 is updated accordingly.
 
 Prior art: `isaaclab_arena_environments/isaac_cap/usbc_insertion/` is a USB-C insertion task, but **Newton/MJWarp only**
@@ -153,7 +153,7 @@ Read from `isaaclab/actuators/actuator_collection.py` and `isaaclab/actuators/ac
 - Commands: `robot.actuators.target_command.set_position_index(value=..., joint_ids=...)`, then
   `write_data_to_sim()`; `compute()` gets `control_action.joint_positions` as the goal.
 - `data.joint_acc` is finite-differenced from `joint_vel`; `data.mass_matrix` (6×6 for the fixed-base SO-101) and
-  `data.gravity_compensation_forces` come from PhysX. `M·q̈ − τ_applied` reproduces the gravity torque within 5 %
+  `data.gravity_compensation_forces` come from PhysX. `M·q̈ - τ_applied` reproduces the gravity torque within 5 %
   in a static hold (shoulder 0.191 vs 0.183 N·m, elbow 0.328 vs 0.337 N·m), so it is used as BAM's external torque.
 - SO-101 USD: the default prim `/so101_new_calib` is referenced at the robot prim path, so links are
   `<prim_path>/gripper`, `<prim_path>/jaw`. Contact-sensor filters must name one link each (a `.*` filter matched
@@ -164,8 +164,8 @@ Hold test (`scripts/hold_test.py`, 1 env, no cameras, 30 s wall, 4.2 GB RSS): se
 
 Friction-mode cost at 16 envs (`scripts/bench_friction_mode.py`, 16 SO-101s on STS3215 actuators, random goals,
 dt 1/240, laptop RTX 4060, no cameras): `explicit` 251 physics steps/s (4022 env-steps/s, 6.5 GB RSS),
-`physx_joint` 222 physics steps/s (3547 env-steps/s, 5.0 GB RSS), i.e. −12 %. `physx_joint` is the env default
-(`patchbench/physics.py`). Re-measure at 64–256 envs on Brev, where the per-step CPU copy grows with num_envs.
+`physx_joint` 222 physics steps/s (3547 env-steps/s, 5.0 GB RSS), i.e. -12 %. `physx_joint` is the env default
+(`latchbench/physics.py`). Re-measure at 64 to 256 envs on Brev, where the per-step CPU copy grows with num_envs.
 
 ## 10. Contact sensing for the plug (P3, 19 Oct)
 
@@ -178,7 +178,7 @@ dt 1/240, laptop RTX 4060, no cameras): `explicit` 251 physics steps/s (4022 env
 
 ## 11. Arena env `rj45_panel` (P5, 19 Oct)
 
-Read from Arena `aa36f19` / Isaac Lab `bb0c8e1` while building `patchbench/environment.py`:
+Read from Arena `aa36f19` / Isaac Lab `bb0c8e1` while building `latchbench/environment.py`:
 
 - External env factories still use the argparse path: `ExampleEnvironmentBase.get_env(args_cli)` +
   `add_cli_args(subparser)`; flags go after the `rj45_panel` subcommand. A subcommand flag with the same name as a
@@ -196,7 +196,7 @@ Read from Arena `aa36f19` / Isaac Lab `bb0c8e1` while building `patchbench/envir
 - `record_post_step` runs before resets and `record_pre_reset` before the reset events, so per-episode metrics are
   recorded in `record_pre_reset` (as `metrics/success_rate.py` does) from the stage tracker.
 - Startup events run after `load_managers`; observation terms are first called inside `load_managers` (shape
-  inference), so shared per-env state is created lazily by whichever term asks first (`patchbench.task.get_state`).
+  inference), so shared per-env state is created lazily by whichever term asks first (`latchbench.task.get_state`).
 - Spawners: `@clone` calls the spawn function once for env_0 and copies the prim spec to the other envs, then applies
   `activate_contact_sensors` to every rigid body under the prim. The plug is added inside the robot's spawn function
   (`objects.spawn_robot_with_plug`): `plug.usd` referenced at `<Robot>/Plug`, `UsdPhysics.FixedJoint`

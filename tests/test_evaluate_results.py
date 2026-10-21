@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from patchbench import results_io as rio
+from latchbench import results_io as rio
 
 
 def test_wilson_hand_values():
@@ -38,7 +38,7 @@ def test_summarize_hand_computed():
            _ep(3, 0, 1)]
     r = rio.summarize(eps, policy="telemetry_spiral", tier="loose", seed=0, extra={"pose_noise_mm": 1.0})
     assert list(r)[:13] == ["policy", "tier", "n", "seed", "funnel", "success", "ci95", "mean_time_to_latch_s",
-                            "wrong_port", "overload_events", "git_sha", "so101_contact_version", "physics"]
+                            "wrong_port", "overload_events", "git_sha", "servosense_version", "physics"]
     assert r["n"] == 4 and r["physics"] == "physx" and r["pose_noise_mm"] == 1.0
     assert r["funnel"] == {"reached": 1.0, "contacted": 0.75, "aligned": 0.75, "seated": 0.5, "latched": 0.5}
     assert r["success"] == 0.5

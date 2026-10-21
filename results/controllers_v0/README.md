@@ -21,7 +21,7 @@ gap_closure = (telemetry - open_loop) / (oracle - open_loop): loose (0.80-0.55)/
 `physx_joint` (7/20, `expert_loose_n20_s0_physx_joint.json`, run before the final integral gains).** With
 `physx_joint`, joints that stop do not restart even for a 10 mm commanded lead (3/20 never reached the port): the
 STS3215 friction budget uses `ext = M*qdd - tau_applied`, which absorbs the PhysX friction reaction while a joint is
-stuck, so the budget grows with the command. Decision needed on `patchbench/physics.py` `SERVO_FRICTION_MODE`.
+stuck, so the budget grows with the command. Decision needed on `latchbench/physics.py` `SERVO_FRICTION_MODE`.
 
 Remaining failure modes (all policies): the plug reaches the face ~1 mm off the axis (servo sag changes as the arm
 extends; the sag integral does not fully remove it in the 3 s entry gate) and then slides along the face. Seated

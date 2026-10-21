@@ -3,24 +3,24 @@ requires = ["setuptools>=66.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "patchbench"
+name = "latchbench"
 version = "0.1.0"
 description = "Isaac Lab-Arena benchmark: SO-101 RJ45 insertion with clearance tiers, staged success predicates and a telemetry-vs-oracle gap-closure metric."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 license = { text = "Apache-2.0" }
 # Isaac Sim, Isaac Lab, Arena and isaaclab-so101 come from the Arena venv (not declared here).
-# so101-contact is installed editable from ../so101-contact during development.
-dependencies = ["so101-contact", "numpy", "matplotlib"]
+# servosense is installed editable from ../servosense during development.
+dependencies = ["servosense", "numpy", "matplotlib"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
 
 [tool.setuptools.packages.find]
-include = ["patchbench*"]
+include = ["latchbench*"]
 
 [tool.setuptools.package-data]
-patchbench = ["assets/usd/**/*.usd", "assets/usd/**/*.usda"]
+latchbench = ["assets/usd/**/*.usd", "assets/usd/**/*.usda"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -4,9 +4,9 @@ Builds the env exactly like Arena's policy_runner (same CLI parsers, ``make_regi
 directly and snapshots the stage tracker just before every reset, so each finished episode is recorded exactly.
 
     cd ~/work/IsaacLab-Arena && source .venv/bin/activate && export OMNI_KIT_ACCEPT_EULA=YES ACCEPT_EULA=Y
-    flock ~/work/.isaac.lock python ~/work/patchbench/results/controllers_v0/run_controllers.py --headless \
+    flock ~/work/.isaac.lock python ~/work/latchbench/results/controllers_v0/run_controllers.py --headless \
         --num_envs 8 --policies expert --episodes 20 --pnoise 0 \
-        --external_environment_class_path patchbench.environment:RJ45PanelEnv rj45_panel --tier loose
+        --external_environment_class_path latchbench.environment:RJ45PanelEnv rj45_panel --tier loose
 
 Writes ``results/controllers_v0/<policy>_<tier>_n<N>_s<sigma>.json``.
 """
@@ -50,15 +50,15 @@ def run(parser):
     import torch
     from isaaclab_arena_environments.cli import get_arena_builder_from_cli, get_isaaclab_arena_environments_cli_parser
 
-    import patchbench.policies as P
-    from patchbench.controllers import PHASES
-    from patchbench.predicates import STAGES, funnel
-    from patchbench.task import get_state
+    import latchbench.policies as P
+    from latchbench.controllers import PHASES
+    from latchbench.predicates import STAGES, funnel
+    from latchbench.task import get_state
 
     parser = get_isaaclab_arena_environments_cli_parser(parser)
     args, _ = parser.parse_known_args()
     if args.friction_mode:
-        from patchbench import physics
+        from latchbench import physics
 
         physics.SERVO_FRICTION_MODE = args.friction_mode
         print(f"[diag] SERVO_FRICTION_MODE overridden -> {args.friction_mode}", flush=True)
@@ -77,7 +77,7 @@ def run(parser):
         if cls is P.ExpertPolicy:
             kw["expert_controller"] = args.expert_controller
         policy = cls(cfg_type(**kw))
-        with torch.inference_mode():  # so101-contact's actuator reset writes in place into inference tensors
+        with torch.inference_mode():  # servosense's actuator reset writes in place into inference tensors
             obs, _ = env.reset()
         policy.reset()
         st = get_state(env)
@@ -126,7 +126,7 @@ def run(parser):
                     plug = st.plug_pose_w()
                     tip_b, _ = st.to_base(plug[:, :3], plug[:, 3:7])
                     fk, _ = c.servo.measured_pose(o.joint_pos, o.tool_p, o.tool_R)
-                    from patchbench.controllers.ik import quat_xyzw_to_matrix
+                    from latchbench.controllers.ik import quat_xyzw_to_matrix
                     Rp = quat_xyzw_to_matrix(plug[:, 3:7])[i]
                     pos_w, quat_w = st.target_mouth_w()
                     Rm = quat_xyzw_to_matrix(quat_w)[i]

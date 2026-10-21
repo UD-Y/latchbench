@@ -19,7 +19,7 @@
  "wrong_port": 0.0,
  "overload_events": 0.0,
  "git_sha": "1af87db+dirty",
- "so101_contact_version": "0.1.0",
+ "servosense_version": "0.1.0",
  "physics": "physx",
  "mean_peak_axial_force_n": 2.585,
  "pose_noise_mm": 1.0,

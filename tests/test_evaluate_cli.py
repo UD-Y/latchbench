@@ -38,8 +38,8 @@ def test_args_and_argv(tmp_path):
     assert env_argv[env_argv.index("--port_est_noise_mm") + 1] == "0.0"  # noise applied once, by the policy
     env_argv = ev.arena_env_argv(c, policy_adds_noise=False)
     assert env_argv[env_argv.index("--port_est_noise_mm") + 1] == "1.0"
-    b = ev.parse_args(["--policy", "lerobot", "--policy.path", "user/patchbench-groot-n17", "--out", str(tmp_path)])
-    assert b.enable_cameras and b.name == "lerobot_patchbench-groot-n17"
+    b = ev.parse_args(["--policy", "lerobot", "--policy.path", "user/latchbench-groot-n17", "--out", str(tmp_path)])
+    assert b.enable_cameras and b.name == "lerobot_latchbench-groot-n17"
     assert "--enable_cameras" in ev.arena_base_argv(ev.worker_config(b, "loose"))
 
 

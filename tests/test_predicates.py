@@ -4,7 +4,7 @@ import math
 
 import torch
 
-from patchbench.predicates import (
+from latchbench.predicates import (
     ALIGNED,
     CONTACTED,
     LATCHED,

@@ -3,7 +3,7 @@
     # laptop, state-only (hold the shared Isaac lock)
     flock -o ~/work/.isaac.lock python scripts/evaluate.py --policy open_loop --tiers loose --n 16 --num_envs 16
     # Brev: a LeRobot policy served from the lerobot venv over ZMQ (cameras on)
-    python scripts/evaluate.py --policy lerobot --policy.path $HF_USER/patchbench-groot-n17 --tiers loose --n 100 --num_envs 8
+    python scripts/evaluate.py --policy lerobot --policy.path $HF_USER/latchbench-groot-n17 --tiers loose --n 100 --num_envs 8
 
 Each tier runs in its own Isaac Sim process (one tier = one panel USD), sequentially, through Arena's builder, policy
 registry and per-episode recorder. Episodes follow a fixed schedule: global episode ``i < n`` is episode
@@ -27,10 +27,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))  # run from a checkout without installing
 
-from patchbench import results_io as rio  # noqa: E402
+from latchbench import results_io as rio  # noqa: E402
 
 SCRIPTED = ("open_loop", "telemetry_spiral", "oracle_spiral", "expert")
-ENV_CLASS = "patchbench.environment:RJ45PanelEnv"
+ENV_CLASS = "latchbench.environment:RJ45PanelEnv"
 ENV_NAME = "rj45_panel"
 DEFAULT_LEROBOT_PYTHON = Path.home() / "work" / ".venv-lerobot" / "bin" / "python"
 # Candidate PolicyCfg field names for the policy's private noise RNG seed (Arena already owns --seed).
@@ -161,7 +161,7 @@ def start_policy_server(args: argparse.Namespace) -> subprocess.Popen | None:
     py = Path(args.lerobot_python)
     if not py.exists():
         raise FileNotFoundError(f"lerobot venv python not found: {py} (set --lerobot_python or $LEROBOT_PYTHON)")
-    cmd = [str(py), str(ROOT / "patchbench" / "policy_server.py"), "--endpoint", args.endpoint,
+    cmd = [str(py), str(ROOT / "latchbench" / "policy_server.py"), "--endpoint", args.endpoint,
            "--device", args.server_device]
     cmd += ["--random"] if args.policy_path == "random" else ["--policy.path", args.policy_path]
     if args.n_action_steps:
@@ -175,7 +175,7 @@ def stop_policy_server(proc: subprocess.Popen | None, endpoint: str) -> None:
     if proc is None:
         return
     try:
-        from patchbench.policy_server import PolicyClient
+        from latchbench.policy_server import PolicyClient
 
         PolicyClient(endpoint, timeout_s=5, connect_timeout_s=5).shutdown_server()
         proc.wait(timeout=20)
@@ -269,7 +269,7 @@ def worker(cfg: dict) -> None:
 
             policy_type = cfg.get("arena_policy") or cfg["policy"]
             if not cfg.get("arena_policy"):
-                import patchbench.policies  # noqa: F401  (registers open_loop / telemetry_spiral / oracle_spiral / expert)
+                import latchbench.policies  # noqa: F401  (registers open_loop / telemetry_spiral / oracle_spiral / expert)
             policy_cls = get_policy_cls(policy_type)
             fields = set(getattr(PolicyRegistry().get_policy_cfg_type(policy_cls), "__dataclass_fields__", {}))
             if "pose_noise_mm" in fields:
@@ -364,12 +364,12 @@ def _ensure_stage_recorder(builder) -> None:
         return
     from isaaclab_arena.recording.episode_recorder_manager import EpisodeRecorderTermCfg
 
-    terms["patchbench_stage"] = EpisodeRecorderTermCfg(func=_record_stage_summary)
-    print("[evaluate] env has no episode recorder term; added patchbench_stage", flush=True)
+    terms["latchbench_stage"] = EpisodeRecorderTermCfg(func=_record_stage_summary)
+    print("[evaluate] env has no episode recorder term; added latchbench_stage", flush=True)
 
 
 def _find_tracker(env):
-    from patchbench.predicates import StageTracker
+    from latchbench.predicates import StageTracker
 
     for holder in (env, getattr(env, "cfg", None)):
         for v in vars(holder).values() if holder is not None else ():
@@ -442,12 +442,12 @@ def _flatten(d, prefix=""):
 
 
 def _make_remote_lerobot_policy(cfg: dict, device):
-    """Arena policy that forwards observations to the ZMQ policy server (patchbench/policy_server.py)."""
+    """Arena policy that forwards observations to the ZMQ policy server (latchbench/policy_server.py)."""
     import numpy as np
     import torch
 
     from isaaclab_arena.policy.policy_base import PolicyBase, PolicyCfg
-    from patchbench.policy_server import IMAGE_KEYS, PolicyClient
+    from latchbench.policy_server import IMAGE_KEYS, PolicyClient
 
     class RemoteLeRobotPolicy(PolicyBase):
         """State in degrees (all 6 joints, LeRobot use_degrees convention), RGB uint8 images, per-env task strings.

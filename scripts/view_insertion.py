@@ -43,7 +43,7 @@ from isaaclab.assets import Articulation, ArticulationCfg  # noqa: E402
 from isaaclab.sensors.camera import Camera, CameraCfg  # noqa: E402
 from isaaclab.sim.utils.stage import get_current_stage  # noqa: E402
 
-from patchbench.assets.build_assets import USD_DIR, RJ45Dims, jack_geometry  # noqa: E402
+from latchbench.assets.build_assets import USD_DIR, RJ45Dims, jack_geometry  # noqa: E402
 
 DIMS = RJ45Dims()
 GEOM = jack_geometry(DIMS, args_cli.tier)

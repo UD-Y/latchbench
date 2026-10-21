@@ -1,0 +1,21 @@
+{
+ "policy": "lerobot",
+ "name": "lerobot_latchbench-groot-n17",
+ "tier": "loose",
+ "n": 16,
+ "num_envs": 16,
+ "seed": 0,
+ "pose_noise_mm": 1.0,
+ "port": "random",
+ "enable_cameras": true,
+ "endpoint": "tcp://127.0.0.1:5555",
+ "n_action_steps": null,
+ "save_frames_every": 2,
+ "frames_dir": "/home/shadeform/eval_viz/lerobot_latchbench-groot-n17/frames_loose",
+ "env_args": [],
+ "policy_args": [],
+ "env_name": null,
+ "arena_policy": null,
+ "jsonl": "/home/shadeform/eval_viz/lerobot_latchbench-groot-n17/raw/loose.jsonl",
+ "meta": "/home/shadeform/eval_viz/lerobot_latchbench-groot-n17/raw/loose.meta.json"
+}

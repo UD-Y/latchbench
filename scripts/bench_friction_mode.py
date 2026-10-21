@@ -29,7 +29,7 @@ from isaaclab.sim import SimulationContext  # noqa: E402
 from isaaclab_so101.assets import SO101_CFG  # noqa: E402
 from isaaclab_so101.constants import HOME_JOINT_POS  # noqa: E402
 
-from so101_contact.isaaclab.actuator import SO101_SIM_TO_LEROBOT, STS3215Actuator, so101_sts3215_cfg  # noqa: E402
+from servosense.isaaclab.actuator import SO101_SIM_TO_LEROBOT, STS3215Actuator, so101_sts3215_cfg  # noqa: E402
 
 DT, DECIMATION = 1 / 240, 8
 

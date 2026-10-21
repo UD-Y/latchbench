@@ -11,12 +11,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # run from a checkout without installing
 
-from patchbench import results_io as rio  # noqa: E402
+from latchbench import results_io as rio  # noqa: E402
 
 
 def build(results_dir: str | Path) -> tuple[Path, Path | None]:
     results_dir = Path(results_dir)
-    results = rio.load_results(results_dir)
+    # Scripted controllers only; learned policies (lerobot_*) are compared in scripts/groot_report.py.
+    results = [r for r in rio.load_results(results_dir) if not str(r["policy"]).startswith("lerobot_")]
     md = results_dir / "LEADERBOARD.md"
     md.write_text(rio.leaderboard_markdown(results))
     png = rio.plot_leaderboard(results, results_dir / "leaderboard.png") if results else None

@@ -8,7 +8,7 @@ import pytest
 
 zmq = pytest.importorskip("zmq")
 
-from patchbench import policy_server as ps  # noqa: E402
+from latchbench import policy_server as ps  # noqa: E402
 
 
 def _free_port() -> int:

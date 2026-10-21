@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pytest
 
-from patchbench import raw_format as rf
+from latchbench import raw_format as rf
 
 
 def synthetic_episode(rng, t=12, hw=(24, 32), port=1, tier="loose", success=True) -> rf.RawEpisode:
