@@ -169,6 +169,24 @@ Watch it: `--viz kit` opens the viewer on `scripts/hold_test.py` and `scripts/ch
 python scripts/check_contact.py --viz kit --tiers medium --offsets_mm 0 --tilts_deg 0 --seeds 1 --pos_iters 32 --cutaway --hold_open
 ```
 
+## Reproduce the GR00T runs and videos (1× L40S)
+
+```bash
+bash scripts/brev/setup_brev.sh                    # once per VM (venvs, pinned repos, HF token)
+bash scripts/brev/chain_overnight.sh               # v0: open-loop expert data -> UD77/patchbench-so101-v0 -> GR00T
+bash scripts/brev/run_v1.sh                        # v1: search demos + Present_Load -> GR00T, eval, 16-env video
+python scripts/evaluate.py --policy lerobot --policy.path UD77/patchbench-groot-n17 --n_action_steps 4 \
+  --name lerobot_patchbench-groot-n17_replan4 --tiers loose --n 50 --num_envs 16      # re-plan ablation
+python scripts/evaluate.py --policy telemetry_spiral --tiers loose --n 16 --num_envs 16 \
+  --enable_cameras --save_frames_every 2 --out ~/eval_hero                            # hero video (also open_loop)
+python scripts/eval_frames_video.py pair ~/eval_hero/open_loop ~/eval_hero/telemetry_spiral \
+  --out results/hero_loose16/open_loop_vs_telemetry_loose
+```
+
+Datasets and models are on the Hub (`UD77/patchbench-so101-v0`, `-v1`, `UD77/patchbench-groot-n17`, `-n17-load`); raw
+episodes are not kept (regenerate with the same seeds). The Newton showcase replays
+`results/newton_showcase/sim_loose_port1.npz` (committed).
+
 ## How the numbers were made
 
 - **Contact physics (gate G1):** a compliant "virtual wrist" pushed the plug into each tier with offsets and tilts;
