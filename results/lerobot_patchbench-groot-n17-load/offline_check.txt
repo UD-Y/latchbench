@@ -1,0 +1,8 @@
+   expert a[t]  [  6.6  -4.   25.6  66.6 -82.2  -8.4]
+   policy a[t]  [  6.4  -5.5  27.9  66.1 -82.3  -8.4]
+
+mean |error| [deg] per joint
+  policy, step 0    shoulder_pan=0.30  shoulder_lift=0.84  elbow_flex=0.79  wrist_flex=0.36  wrist_roll=0.24  gripper=0.00
+  policy, chunk     shoulder_pan=1.24  shoulder_lift=1.57  elbow_flex=1.40  wrist_flex=0.61  wrist_roll=1.11  gripper=0.00
+  hold baseline     shoulder_pan=0.90  shoulder_lift=2.13  elbow_flex=4.08  wrist_flex=0.45  wrist_roll=0.95  gripper=0.06
+overall: policy chunk 0.99 deg vs hold 1.43 deg

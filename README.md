@@ -86,9 +86,33 @@ Why it does not latch:
   outcome on loose (0/50 latched; reached 0.32, aligned 0.04;
   [ablation_replan4](results/lerobot_patchbench-groot-n17/ablation_replan4/loose.json)).
 
-That is the regime PatchBench is built to expose. The next baseline (in progress) changes both: demos from the
-telemetry-spiral expert with a 1.5 mm noisy port estimate (approach → contact → search → drop-in → latch), and
-`observation.state` = 6 joint positions + 6 `Present_Load` registers (`scripts/to_lerobot.py --state_with_load`).
+### GR00T v1: search demos + servo load in the state
+
+`UD77/patchbench-groot-n17-load` changes both causes and nothing else (same model, recipe, 6000 steps, cameras,
+evaluator): [`UD77/patchbench-so101-v1`](https://huggingface.co/datasets/UD77/patchbench-so101-v1) has 600 latched
+episodes from the **telemetry-spiral** expert given a port estimate with 1.5 mm noise (so the demos contain approach
+→ contact → spiral search → drop-in → latch), and `observation.state` = 6 joint positions + 6 signed `Present_Load`
+registers (`scripts/to_lerobot.py --state_with_load`; GR00T N1.7 reads only `observation.state`, and its relative
+actions use the first 6 dims). n = 50 per tier:
+
+| | reached | contacted | aligned | seated | latched | v0 latched |
+|---|---|---|---|---|---|---|
+| loose | 0.46 | 0.40 | 0.14 | 0.10 | **0.08** [0.03, 0.19] | 0.00 |
+| medium | 0.42 | 0.38 | 0.12 | 0.04 | **0.04** [0.01, 0.13] | 0.00 |
+| spec | 0.50 | 0.44 | 0.06 | 0.00 | **0.00** [0.00, 0.07] | 0.00 |
+
+v1 gets past every stage v0 never reached (aligned, seated, latched); pooled over tiers it latched 6/150 vs 0/150
+(Fisher exact p = 0.03). It is still far below the scripted controller that reads the same register (0.81 / 0.69 /
+0.56). Offline it fits the search demos less tightly than v0 fit straight pushes (0.99° chunk error vs 1.43° for
+holding still), which is expected for a multimodal search. What this shows: a VLA can only imitate the sensing its
+demonstrations used; with contact-driven demos and the load register in its state, GR00T starts to insert, and the
+remaining gap to the scripted search on the same signal is what PatchBench measures.
+
+![GR00T v1 latching](results/lerobot_patchbench-groot-n17-load/groot_v1_env2_latch.png)
+
+Side-by-side video of both fine-tunes on 16 loose envs:
+[groot_v0_vs_v1_loose.mp4](results/lerobot_patchbench-groot-n17-load/groot_v0_vs_v1_loose.mp4) (each latched 1/16 in
+that run; at n = 16 the difference in the tables above is not visible, so the video shows behaviour, not the rate).
 
 ## What is in the box
 
@@ -164,8 +188,7 @@ python scripts/check_contact.py --viz kit --tiers medium --offsets_mm 0 --tilts_
 
 v0.1 (21 Oct 2026). Done: assets, environment, contact tuning, servo actuator, three controllers, n = 200 sweep,
 evaluator, LeRobot v3 dataset (600 episodes) on the Hub, GR00T N1.7 fine-tune and evaluation on a 1× L40S, Newton
-cross-check. In progress: GR00T trained on search demos with `Present_Load` in its state. Pending: a real-arm
-calibration run.
+cross-check, GR00T v1 (search demos, `Present_Load` in the state). Pending: a real-arm calibration run.
 
 ## License
 

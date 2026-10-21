@@ -8,6 +8,7 @@ Success = latched (CLAUDE.md section 6.1). Cells: success rate [Wilson 95 % CI] 
 | telemetry_spiral | 0.81 [0.76, 0.86] (200) | 0.69 [0.63, 0.75] (200) | 0.56 [0.49, 0.63] (200) |
 | oracle_spiral | 0.82 [0.76, 0.87] (200) | 0.72 [0.65, 0.78] (200) | 0.56 [0.49, 0.63] (200) |
 | lerobot_patchbench-groot-n17 | 0.00 [0.00, 0.07] (50) | 0.00 [0.00, 0.07] (50) | 0.00 [0.00, 0.07] (50) |
+| lerobot_patchbench-groot-n17-load | 0.08 [0.03, 0.19] (50) | 0.04 [0.01, 0.13] (50) | 0.00 [0.00, 0.07] (50) |
 
 ## Gap closure
 
@@ -29,6 +30,7 @@ Success = latched (CLAUDE.md section 6.1). Cells: success rate [Wilson 95 % CI] 
 | telemetry_spiral | 1.00 | 0.95 | 0.81 | 0.81 | 0.81 | 0.00 | 0.00 | 6.9 |
 | oracle_spiral | 1.00 | 1.00 | 0.82 | 0.82 | 0.82 | 0.00 | 0.00 | 6.2 |
 | lerobot_patchbench-groot-n17 | 0.32 | 0.30 | 0.00 | 0.00 | 0.00 | 0.02 | 0.00 | — |
+| lerobot_patchbench-groot-n17-load | 0.46 | 0.40 | 0.14 | 0.10 | 0.08 | 0.20 | 0.00 | 12.5 |
 
 ### medium
 
@@ -38,6 +40,7 @@ Success = latched (CLAUDE.md section 6.1). Cells: success rate [Wilson 95 % CI] 
 | telemetry_spiral | 1.00 | 0.94 | 0.70 | 0.69 | 0.69 | 0.00 | 0.01 | 7.1 |
 | oracle_spiral | 1.00 | 0.99 | 0.72 | 0.72 | 0.72 | 0.00 | 0.00 | 6.9 |
 | lerobot_patchbench-groot-n17 | 0.42 | 0.42 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | — |
+| lerobot_patchbench-groot-n17-load | 0.42 | 0.38 | 0.12 | 0.04 | 0.04 | 0.14 | 0.00 | 12.5 |
 
 ### spec
 
@@ -47,6 +50,7 @@ Success = latched (CLAUDE.md section 6.1). Cells: success rate [Wilson 95 % CI] 
 | telemetry_spiral | 1.00 | 0.93 | 0.60 | 0.56 | 0.56 | 0.00 | 0.00 | 7.3 |
 | oracle_spiral | 1.00 | 1.00 | 0.59 | 0.56 | 0.56 | 0.00 | 0.00 | 7.0 |
 | lerobot_patchbench-groot-n17 | 0.40 | 0.38 | 0.00 | 0.00 | 0.00 | 0.04 | 0.00 | — |
+| lerobot_patchbench-groot-n17-load | 0.50 | 0.44 | 0.06 | 0.00 | 0.00 | 0.18 | 0.00 | — |
 
 ## Provenance
 
@@ -64,3 +68,6 @@ Success = latched (CLAUDE.md section 6.1). Cells: success rate [Wilson 95 % CI] 
 | lerobot_patchbench-groot-n17 | loose | dede52a+dirty | 0.1.0 | physx | 0 | 1.0 |
 | lerobot_patchbench-groot-n17 | medium | dede52a+dirty | 0.1.0 | physx | 0 | 1.0 |
 | lerobot_patchbench-groot-n17 | spec | dede52a+dirty | 0.1.0 | physx | 0 | 1.0 |
+| lerobot_patchbench-groot-n17-load | loose | dede52a+dirty | 0.1.0 | physx | 0 | 1.0 |
+| lerobot_patchbench-groot-n17-load | medium | dede52a+dirty | 0.1.0 | physx | 0 | 1.0 |
+| lerobot_patchbench-groot-n17-load | spec | dede52a+dirty | 0.1.0 | physx | 0 | 1.0 |
